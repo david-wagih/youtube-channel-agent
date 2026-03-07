@@ -40,4 +40,4 @@ jobs:
         run: pip install -e ".[dev]"
 
       - name: Run tests
-        run: pytest; code=$?; [ $code -eq 5 ] && exit 0 || exit $code
+        run: pytest || [ $? -eq 5 ]

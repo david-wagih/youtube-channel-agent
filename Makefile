@@ -7,6 +7,6 @@ format:
 	ruff format src/
 
 test:
-	pytest; code=$$?; [ $$code -eq 5 ] && exit 0 || exit $$code
+	pytest || [ $$? -eq 5 ]
 
 ci: format lint test
