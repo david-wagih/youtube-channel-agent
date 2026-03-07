@@ -175,10 +175,7 @@ class SEOOptimizer:
 
         response = await self.llm.generate_json(
             prompt=prompt,
-            system=(
-                "You are an expert at analyzing video content and creating clear,"
-                " descriptive YouTube chapters. Always respond with valid JSON."
-            ),
+            system="You are an expert at analyzing video content and creating clear, descriptive YouTube chapters. Always respond with valid JSON.",  # noqa: E501
             temperature=0.5,
         )
 
