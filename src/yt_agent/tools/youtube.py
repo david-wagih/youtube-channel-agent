@@ -1,20 +1,18 @@
 """YouTube API integration tool."""
 
-import os
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from dataclasses import dataclass
 
+from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from rich.console import Console
 
 from ..config import get_credentials_dir
 from .base import BaseTool, ToolResult
-
 
 console = Console()
 
@@ -277,7 +275,7 @@ class YouTubeTool(BaseTool):
                 progress = int(status.progress() * 100)
                 console.print(f"  Upload progress: {progress}%", end="\r")
 
-        console.print(f"  Upload progress: 100%")
+        console.print("  Upload progress: 100%")
 
         video_id = response["id"]
 
@@ -354,10 +352,14 @@ class YouTubeTool(BaseTool):
         service = self._get_service()
 
         # Get current video details
-        video = service.videos().list(
-            part="snippet",
-            id=video_id,
-        ).execute()
+        video = (
+            service.videos()
+            .list(
+                part="snippet",
+                id=video_id,
+            )
+            .execute()
+        )
 
         if not video.get("items"):
             raise ValueError(f"Video not found: {video_id}")
@@ -381,13 +383,17 @@ class YouTubeTool(BaseTool):
             snippet["tags"] = limited_tags
 
         # Update video
-        response = service.videos().update(
-            part="snippet",
-            body={
-                "id": video_id,
-                "snippet": snippet,
-            },
-        ).execute()
+        response = (
+            service.videos()
+            .update(
+                part="snippet",
+                body={
+                    "id": video_id,
+                    "snippet": snippet,
+                },
+            )
+            .execute()
+        )
 
         console.print(f"[dim]Updated: {response.get('snippet', {}).get('title', video_id)}[/dim]")
         return True
@@ -400,10 +406,14 @@ class YouTubeTool(BaseTool):
         """
         service = self._get_service()
 
-        response = service.channels().list(
-            part="snippet,statistics",
-            mine=True,
-        ).execute()
+        response = (
+            service.channels()
+            .list(
+                part="snippet,statistics",
+                mine=True,
+            )
+            .execute()
+        )
 
         if not response.get("items"):
             return {}
@@ -454,9 +464,7 @@ class YouTubeTool(BaseTool):
         published_at = None
         if snippet.get("publishedAt"):
             try:
-                published_at = datetime.fromisoformat(
-                    snippet["publishedAt"].replace("Z", "+00:00")
-                )
+                published_at = datetime.fromisoformat(snippet["publishedAt"].replace("Z", "+00:00"))
             except (ValueError, TypeError):
                 pass
 
@@ -490,10 +498,14 @@ class YouTubeTool(BaseTool):
         """
         service = self._get_service()
 
-        response = service.videos().list(
-            part="snippet,statistics",
-            id=video_id,
-        ).execute()
+        response = (
+            service.videos()
+            .list(
+                part="snippet,statistics",
+                id=video_id,
+            )
+            .execute()
+        )
 
         if not response.get("items"):
             raise ValueError(f"Video not found: {video_id}")
@@ -514,25 +526,32 @@ class YouTubeTool(BaseTool):
         page_token = None
 
         while True:
-            response = service.playlistItems().list(
-                part="snippet",
-                playlistId=playlist_id,
-                maxResults=50,
-                pageToken=page_token,
-            ).execute()
+            response = (
+                service.playlistItems()
+                .list(
+                    part="snippet",
+                    playlistId=playlist_id,
+                    maxResults=50,
+                    pageToken=page_token,
+                )
+                .execute()
+            )
 
             # Get video IDs from playlist items
             video_ids = [
-                item["snippet"]["resourceId"]["videoId"]
-                for item in response.get("items", [])
+                item["snippet"]["resourceId"]["videoId"] for item in response.get("items", [])
             ]
 
             if video_ids:
                 # Fetch full video details including statistics
-                videos_response = service.videos().list(
-                    part="snippet,statistics",
-                    id=",".join(video_ids),
-                ).execute()
+                videos_response = (
+                    service.videos()
+                    .list(
+                        part="snippet,statistics",
+                        id=",".join(video_ids),
+                    )
+                    .execute()
+                )
 
                 for item in videos_response.get("items", []):
                     videos.append(self._parse_video_response(item))
@@ -555,41 +574,51 @@ class YouTubeTool(BaseTool):
         service = self._get_service()
 
         # Get the uploads playlist for the channel
-        channel_response = service.channels().list(
-            part="contentDetails",
-            mine=True,
-        ).execute()
+        channel_response = (
+            service.channels()
+            .list(
+                part="contentDetails",
+                mine=True,
+            )
+            .execute()
+        )
 
         if not channel_response.get("items"):
             return []
 
-        uploads_playlist_id = (
-            channel_response["items"][0]["contentDetails"]
-            ["relatedPlaylists"]["uploads"]
-        )
+        uploads_playlist_id = channel_response["items"][0]["contentDetails"]["relatedPlaylists"][
+            "uploads"
+        ]
 
         # Get videos from uploads playlist
         videos = []
         page_token = None
 
         while len(videos) < max_results:
-            response = service.playlistItems().list(
-                part="snippet",
-                playlistId=uploads_playlist_id,
-                maxResults=min(50, max_results - len(videos)),
-                pageToken=page_token,
-            ).execute()
+            response = (
+                service.playlistItems()
+                .list(
+                    part="snippet",
+                    playlistId=uploads_playlist_id,
+                    maxResults=min(50, max_results - len(videos)),
+                    pageToken=page_token,
+                )
+                .execute()
+            )
 
             video_ids = [
-                item["snippet"]["resourceId"]["videoId"]
-                for item in response.get("items", [])
+                item["snippet"]["resourceId"]["videoId"] for item in response.get("items", [])
             ]
 
             if video_ids:
-                videos_response = service.videos().list(
-                    part="snippet,statistics",
-                    id=",".join(video_ids),
-                ).execute()
+                videos_response = (
+                    service.videos()
+                    .list(
+                        part="snippet,statistics",
+                        id=",".join(video_ids),
+                    )
+                    .execute()
+                )
 
                 for item in videos_response.get("items", []):
                     videos.append(self._parse_video_response(item))
@@ -611,20 +640,26 @@ class YouTubeTool(BaseTool):
         page_token = None
 
         while True:
-            response = service.playlists().list(
-                part="snippet,contentDetails",
-                mine=True,
-                maxResults=50,
-                pageToken=page_token,
-            ).execute()
+            response = (
+                service.playlists()
+                .list(
+                    part="snippet,contentDetails",
+                    mine=True,
+                    maxResults=50,
+                    pageToken=page_token,
+                )
+                .execute()
+            )
 
             for item in response.get("items", []):
-                playlists.append({
-                    "id": item["id"],
-                    "title": item["snippet"]["title"],
-                    "description": item["snippet"].get("description", ""),
-                    "video_count": item["contentDetails"].get("itemCount", 0),
-                })
+                playlists.append(
+                    {
+                        "id": item["id"],
+                        "title": item["snippet"]["title"],
+                        "description": item["snippet"].get("description", ""),
+                        "video_count": item["contentDetails"].get("itemCount", 0),
+                    }
+                )
 
             page_token = response.get("nextPageToken")
             if not page_token:
@@ -658,7 +693,7 @@ class YouTubeTool(BaseTool):
                 },
             ).execute()
 
-            console.print(f"[green]Added to playlist.[/green]")
+            console.print("[green]Added to playlist.[/green]")
             return True
 
         except Exception as e:

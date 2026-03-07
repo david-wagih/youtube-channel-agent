@@ -1,6 +1,7 @@
 """LLM prompt templates."""
 
-SEO_SYSTEM_PROMPT = """You are an expert YouTube SEO specialist for an Egyptian Arabic tech education channel (DevOps with David).
+SEO_SYSTEM_PROMPT = """You are an expert YouTube SEO specialist for an Egyptian Arabic
+tech education channel (DevOps with David).
 
 ═══════════════════════════════════════════════════════════════
 LANGUAGE RULES — NON-NEGOTIABLE
@@ -12,7 +13,8 @@ LANGUAGE RULES — NON-NEGOTIABLE
    Terraform, Ansible, Jenkins, Python, Shell, YAML, Pipeline,
    Container, Cloud, Server, Deploy, Build, Test, and any tool name.
 
-2. ARABIC used in this channel is Egyptian colloquial (عامية مصرية) — NOT Modern Standard Arabic (فصحى).
+2. ARABIC used in this channel is Egyptian colloquial (عامية مصرية)
+   — NOT Modern Standard Arabic (فصحى).
    Egyptian Arabic to USE:
    ✓ "هنتعلم" (we'll learn)   — NOT "سنتعلم"
    ✓ "في الفيديو ده"           — NOT "في هذا الفيديو"
@@ -35,7 +37,8 @@ LANGUAGE RULES — NON-NEGOTIABLE
 Always respond with valid JSON."""
 
 
-SEO_OPTIMIZATION_PROMPT = """Create SEO-optimized YouTube metadata for this DevOps video targeting Egyptian Arabic speakers.
+SEO_OPTIMIZATION_PROMPT = """Create SEO-optimized YouTube metadata for this DevOps video
+targeting Egyptian Arabic speakers.
 
 TOPIC: {topic}
 
@@ -85,7 +88,8 @@ DESCRIPTION RULES
 ═══════════════════════════════════════════════════════════════
 
 The description must follow this exact structure.
-Write in Egyptian colloquial Arabic for the hook — it should sound like a person talking, not a textbook.
+Write in Egyptian colloquial Arabic for the hook — it should sound like a person talking,
+not a textbook.
 
 STRUCTURE:
 
@@ -154,7 +158,9 @@ Generate a JSON response with this exact structure:
 }}"""
 
 
-SEO_ENHANCEMENT_PROMPT = """You are a YouTube SEO expert improving metadata for "DevOps with David" — an Egyptian Arabic DevOps education channel targeting beginners, students, and software engineers. Posts every Saturday at 7PM Cairo time.
+SEO_ENHANCEMENT_PROMPT = """You are a YouTube SEO expert improving metadata for "DevOps with David"
+— an Egyptian Arabic DevOps education channel targeting beginners, students, and software engineers.
+Posts every Saturday at 7PM Cairo time.
 
 CURRENT VIDEO METADATA:
 - Title: {current_title}
@@ -176,7 +182,8 @@ CHANNEL INFO:
 LANGUAGE RULES — NON-NEGOTIABLE
 ═══════════════════════════════════════════════════════════════
 
-Technical terms ALWAYS in English: DevOps, Docker, Kubernetes, Git, GitHub, CI/CD, AWS, Linux, Terraform, etc.
+Technical terms ALWAYS in English: DevOps, Docker, Kubernetes, Git, GitHub,
+CI/CD, AWS, Linux, Terraform, etc.
 NEVER: ديفوبس، كوبرنيتس، دوكر، جيت
 
 Arabic must be Egyptian colloquial (عامية مصرية), NOT فصحى:

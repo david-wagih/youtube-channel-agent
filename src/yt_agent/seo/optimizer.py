@@ -5,10 +5,10 @@ from dataclasses import dataclass, field
 from ..config import ChannelProfile
 from ..llm.base import BaseLLM
 from ..utils.prompts import (
-    SEO_SYSTEM_PROMPT,
-    SEO_OPTIMIZATION_PROMPT,
-    SEO_ENHANCEMENT_PROMPT,
     CHAPTER_GENERATION_PROMPT,
+    SEO_ENHANCEMENT_PROMPT,
+    SEO_OPTIMIZATION_PROMPT,
+    SEO_SYSTEM_PROMPT,
 )
 
 
@@ -175,16 +175,21 @@ class SEOOptimizer:
 
         response = await self.llm.generate_json(
             prompt=prompt,
-            system="You are an expert at analyzing video content and creating clear, descriptive YouTube chapters. Always respond with valid JSON.",
+            system=(
+                "You are an expert at analyzing video content and creating clear,"
+                " descriptive YouTube chapters. Always respond with valid JSON."
+            ),
             temperature=0.5,
         )
 
         chapters = []
         for ch in response.get("chapters", []):
-            chapters.append(Chapter(
-                time=ch["time"],
-                title=ch["title"],
-            ))
+            chapters.append(
+                Chapter(
+                    time=ch["time"],
+                    title=ch["title"],
+                )
+            )
 
         return chapters
 

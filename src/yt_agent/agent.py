@@ -1,6 +1,5 @@
 """Main agent orchestrator."""
 
-import asyncio
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -10,12 +9,11 @@ from rich.panel import Panel
 from rich.prompt import Confirm, Prompt
 from rich.table import Table
 
-from .config import ChannelProfile, settings
+from .config import ChannelProfile
 from .llm.base import BaseLLM
 from .llm.factory import create_llm
 from .seo.optimizer import SEOOptimizer, VideoMetadata
 from .utils.scheduler import calculate_next_publish_time, format_publish_time
-
 
 console = Console()
 
@@ -41,21 +39,33 @@ class VideoEnhancement:
     def display_comparison(self) -> None:
         """Display before/after comparison."""
         # Title comparison
-        console.print(Panel(
-            f"[dim]Original:[/dim] {self.original_title}\n"
-            f"[bold cyan]Enhanced:[/bold cyan] {self.enhanced_metadata.title}",
-            title="Title Comparison",
-        ))
+        console.print(
+            Panel(
+                f"[dim]Original:[/dim] {self.original_title}\n"
+                f"[bold cyan]Enhanced:[/bold cyan] {self.enhanced_metadata.title}",
+                title="Title Comparison",
+            )
+        )
 
         # Description preview (first 200 chars)
-        orig_preview = self.original_description[:200] + "..." if len(self.original_description) > 200 else self.original_description
-        new_preview = self.enhanced_metadata.description[:200] + "..." if len(self.enhanced_metadata.description) > 200 else self.enhanced_metadata.description
+        orig_preview = (
+            self.original_description[:200] + "..."
+            if len(self.original_description) > 200
+            else self.original_description
+        )
+        new_preview = (
+            self.enhanced_metadata.description[:200] + "..."
+            if len(self.enhanced_metadata.description) > 200
+            else self.enhanced_metadata.description
+        )
 
-        console.print(Panel(
-            f"[dim]Original:[/dim]\n{orig_preview}\n\n"
-            f"[bold cyan]Enhanced:[/bold cyan]\n{new_preview}",
-            title="Description Preview",
-        ))
+        console.print(
+            Panel(
+                f"[dim]Original:[/dim]\n{orig_preview}\n\n"
+                f"[bold cyan]Enhanced:[/bold cyan]\n{new_preview}",
+                title="Description Preview",
+            )
+        )
 
         # Tags comparison
         orig_tags = ", ".join(self.original_tags[:8]) if self.original_tags else "None"
@@ -63,18 +73,22 @@ class VideoEnhancement:
         if len(self.enhanced_metadata.tags) > 8:
             new_tags += f" ... (+{len(self.enhanced_metadata.tags) - 8} more)"
 
-        console.print(Panel(
-            f"[dim]Original ({len(self.original_tags)}):[/dim] {orig_tags}\n"
-            f"[bold cyan]Enhanced ({len(self.enhanced_metadata.tags)}):[/bold cyan] {new_tags}",
-            title="Tags Comparison",
-        ))
+        console.print(
+            Panel(
+                f"[dim]Original ({len(self.original_tags)}):[/dim] {orig_tags}\n"
+                f"[bold cyan]Enhanced ({len(self.enhanced_metadata.tags)}):[/bold cyan] {new_tags}",
+                title="Tags Comparison",
+            )
+        )
 
         # Changes summary
-        console.print(Panel(
-            self._format_changes_summary(),
-            title="Changes Made",
-            style="green",
-        ))
+        console.print(
+            Panel(
+                self._format_changes_summary(),
+                title="Changes Made",
+                style="green",
+            )
+        )
 
 
 @dataclass
@@ -92,8 +106,16 @@ class EnhancePlan:
         table.add_column("Views", justify="right")
 
         for i, enhancement in enumerate(self.enhancements, 1):
-            orig_title = enhancement.original_title[:40] + "..." if len(enhancement.original_title) > 40 else enhancement.original_title
-            new_title = enhancement.enhanced_metadata.title[:40] + "..." if len(enhancement.enhanced_metadata.title) > 40 else enhancement.enhanced_metadata.title
+            orig_title = (
+                enhancement.original_title[:40] + "..."
+                if len(enhancement.original_title) > 40
+                else enhancement.original_title
+            )
+            new_title = (
+                enhancement.enhanced_metadata.title[:40] + "..."
+                if len(enhancement.enhanced_metadata.title) > 40
+                else enhancement.enhanced_metadata.title
+            )
 
             table.add_row(
                 str(i),
@@ -124,27 +146,31 @@ class PublishPlan:
     def display(self) -> None:
         """Display the publish plan to the user."""
         console.print()
-        console.print(Panel.fit(
-            f"[bold cyan]{self.metadata.title}[/bold cyan]",
-            title="Title",
-        ))
+        console.print(
+            Panel.fit(
+                f"[bold cyan]{self.metadata.title}[/bold cyan]",
+                title="Title",
+            )
+        )
 
-        console.print(Panel(
-            self.metadata.description,
-            title="Description",
-            expand=False,
-        ))
+        console.print(
+            Panel(
+                self.metadata.description,
+                title="Description",
+                expand=False,
+            )
+        )
 
         # Chapters (if available)
         if self.metadata.chapters:
-            chapters_text = "\n".join(
-                f"  {ch.time} - {ch.title}" for ch in self.metadata.chapters
+            chapters_text = "\n".join(f"  {ch.time} - {ch.title}" for ch in self.metadata.chapters)
+            console.print(
+                Panel(
+                    chapters_text,
+                    title=f"Chapters ({len(self.metadata.chapters)})",
+                    style="cyan",
+                )
             )
-            console.print(Panel(
-                chapters_text,
-                title=f"Chapters ({len(self.metadata.chapters)})",
-                style="cyan",
-            ))
 
         # Tags table
         tags_table = Table(show_header=False, box=None)
@@ -156,16 +182,20 @@ class PublishPlan:
 
         # Thumbnail (if provided)
         if self.thumbnail_path:
-            console.print(Panel(
-                f"[green]{self.thumbnail_path}[/green]",
-                title="Thumbnail",
-            ))
+            console.print(
+                Panel(
+                    f"[green]{self.thumbnail_path}[/green]",
+                    title="Thumbnail",
+                )
+            )
 
         # Schedule
-        console.print(Panel(
-            f"[bold yellow]{format_publish_time(self.publish_time)}[/bold yellow]",
-            title="Scheduled For",
-        ))
+        console.print(
+            Panel(
+                f"[bold yellow]{format_publish_time(self.publish_time)}[/bold yellow]",
+                title="Scheduled For",
+            )
+        )
 
 
 class YouTubeAgent:
@@ -323,14 +353,16 @@ class YouTubeAgent:
             )
 
             console.print()
-            console.print(Panel(
-                f"[bold green]Video uploaded successfully![/bold green]\n\n"
-                f"Title: {result.title}\n"
-                f"Video URL: [link={result.url}]{result.url}[/link]\n"
-                f"Studio URL: [link={result.studio_url}]{result.studio_url}[/link]\n\n"
-                f"Scheduled for: {format_publish_time(plan.publish_time)}",
-                title="Upload Complete",
-            ))
+            console.print(
+                Panel(
+                    f"[bold green]Video uploaded successfully![/bold green]\n\n"
+                    f"Title: {result.title}\n"
+                    f"Video URL: [link={result.url}]{result.url}[/link]\n"
+                    f"Studio URL: [link={result.studio_url}]{result.studio_url}[/link]\n\n"
+                    f"Scheduled for: {format_publish_time(plan.publish_time)}",
+                    title="Upload Complete",
+                )
+            )
 
             return True
 
@@ -356,9 +388,7 @@ class YouTubeAgent:
         drive = GoogleDriveTool()
 
         if not drive.is_available():
-            raise RuntimeError(
-                "Google Drive not configured. Run 'yt-agent auth drive' first."
-            )
+            raise RuntimeError("Google Drive not configured. Run 'yt-agent auth drive' first.")
 
         return await drive.download_video(url)
 
@@ -445,9 +475,7 @@ class YouTubeAgent:
 
         # If no topic and no transcript, ask user
         if not topic and not transcript:
-            topic = Prompt.ask(
-                "\n[bold]Describe your video topic[/bold] (for SEO optimization)"
-            )
+            topic = Prompt.ask("\n[bold]Describe your video topic[/bold] (for SEO optimization)")
 
         # Generate plan
         plan = await self.process_video(
@@ -491,7 +519,7 @@ class YouTubeAgent:
         Returns:
             True if enhancements were successfully applied.
         """
-        from .tools.youtube import YouTubeTool, VideoDetails
+        from .tools.youtube import VideoDetails, YouTubeTool
 
         youtube = YouTubeTool()
 
@@ -505,22 +533,24 @@ class YouTubeAgent:
 
         try:
             if video_id:
-                console.print(f"\n[bold]Fetching video details...[/bold]")
+                console.print("\n[bold]Fetching video details...[/bold]")
                 video = await youtube.get_video_details(video_id)
                 videos = [video]
 
             elif playlist_id:
-                console.print(f"\n[bold]Fetching playlist videos...[/bold]")
+                console.print("\n[bold]Fetching playlist videos...[/bold]")
                 videos = await youtube.list_playlist_videos(playlist_id)
                 console.print(f"Found {len(videos)} videos in playlist")
 
             elif recent_count:
-                console.print(f"\n[bold]Fetching recent channel videos...[/bold]")
+                console.print("\n[bold]Fetching recent channel videos...[/bold]")
                 videos = await youtube.list_channel_videos(max_results=recent_count)
                 console.print(f"Found {len(videos)} videos")
 
             else:
-                console.print("[bold red]Error:[/bold red] Specify --video, --playlist, or --recent")
+                console.print(
+                    "[bold red]Error:[/bold red] Specify --video, --playlist, or --recent"
+                )
                 return False
 
         except Exception as e:
@@ -541,7 +571,7 @@ class YouTubeAgent:
         # Generate enhancements
         enhancements: list[VideoEnhancement] = []
 
-        console.print(f"\n[bold]Generating enhancements...[/bold]")
+        console.print("\n[bold]Generating enhancements...[/bold]")
 
         for i, video in enumerate(videos, 1):
             console.print(f"  Video {i}/{len(videos)}: {video.title[:50]}...", end="")
@@ -554,15 +584,17 @@ class YouTubeAgent:
                     view_count=video.view_count,
                 )
 
-                enhancements.append(VideoEnhancement(
-                    video_id=video.video_id,
-                    original_title=video.title,
-                    original_description=video.description,
-                    original_tags=video.tags,
-                    view_count=video.view_count,
-                    enhanced_metadata=enhanced_metadata,
-                    changes_summary=changes_summary,
-                ))
+                enhancements.append(
+                    VideoEnhancement(
+                        video_id=video.video_id,
+                        original_title=video.title,
+                        original_description=video.description,
+                        original_tags=video.tags,
+                        view_count=video.view_count,
+                        enhanced_metadata=enhanced_metadata,
+                        changes_summary=changes_summary,
+                    )
+                )
                 console.print(" [green]✓[/green]")
 
             except Exception as e:
@@ -651,12 +683,13 @@ class YouTubeAgent:
             except Exception as e:
                 console.print(f"  [red]✗[/red] {enhancement.original_title[:50]}: {e}")
 
-        console.print(f"\n[bold green]Applied {success_count}/{len(enhancements)} enhancements.[/bold green]")
+        console.print(
+            f"\n[bold green]Applied {success_count}/{len(enhancements)} enhancements.[/bold green]"
+        )
         return success_count > 0
 
     def _select_videos_interactive(self, videos: list) -> list:
         """Let user select which videos to enhance."""
-        from .tools.youtube import VideoDetails
 
         # Display available videos
         table = Table(title="Available Videos")

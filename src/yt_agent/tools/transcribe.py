@@ -4,13 +4,11 @@ import tempfile
 import uuid
 from pathlib import Path
 
-from google.cloud import speech
-from google.cloud import storage
+from google.cloud import speech, storage
 from rich.console import Console
 
 from ..config import settings
 from .base import BaseTool, ToolResult
-
 
 console = Console()
 
@@ -33,6 +31,7 @@ class TranscriptionTool(BaseTool):
     def is_available(self) -> bool:
         """Check if Google Cloud credentials are configured."""
         import os
+
         # Check for GOOGLE_APPLICATION_CREDENTIALS env var
         return bool(
             settings.google_application_credentials
@@ -72,7 +71,8 @@ class TranscriptionTool(BaseTool):
         blob_name = f"yt-agent-transcripts/{uuid.uuid4()}/{local_path.name}"
         blob = bucket.blob(blob_name)
 
-        console.print(f"[dim]Uploading audio to GCS ({local_path.stat().st_size / 1024 / 1024:.1f} MB)...[/dim]")
+        size_mb = local_path.stat().st_size / 1024 / 1024
+        console.print(f"[dim]Uploading audio to GCS ({size_mb:.1f} MB)...[/dim]")
         blob.upload_from_filename(str(local_path))
 
         return f"gs://{settings.gcs_bucket}/{blob_name}"
@@ -169,6 +169,7 @@ class TranscriptionTool(BaseTool):
 
         # Check audio duration
         from moviepy.audio.io.AudioFileClip import AudioFileClip
+
         audio_clip = AudioFileClip(str(audio_path))
         duration = audio_clip.duration
         audio_clip.close()
@@ -190,12 +191,16 @@ class TranscriptionTool(BaseTool):
             if duration > 55:
                 # Use long-running recognition with GCS for audio > ~1 minute
                 # Using 55s threshold to have some buffer
-                console.print(f"[dim]Video is {duration:.0f}s, using long-running transcription...[/dim]")
+                console.print(
+                    f"[dim]Video is {duration:.0f}s, using long-running transcription...[/dim]"
+                )
 
                 gcs_uri = self._upload_to_gcs(audio_path)
                 audio = speech.RecognitionAudio(uri=gcs_uri)
 
-                with console.status("[bold green]Transcribing (this may take a while for long videos)..."):
+                with console.status(
+                    "[bold green]Transcribing (this may take a while for long videos)..."
+                ):
                     operation = client.long_running_recognize(config=config, audio=audio)
                     response = operation.result(timeout=600)  # 10 minute timeout
 
@@ -253,6 +258,7 @@ class TranscriptionTool(BaseTool):
 
         # Check audio duration
         from moviepy.audio.io.AudioFileClip import AudioFileClip
+
         audio_clip = AudioFileClip(str(audio_path))
         duration = audio_clip.duration
         audio_clip.close()
@@ -274,12 +280,16 @@ class TranscriptionTool(BaseTool):
         try:
             if duration > 55:
                 # Use long-running recognition with GCS
-                console.print(f"[dim]Video is {duration:.0f}s, using long-running transcription...[/dim]")
+                console.print(
+                    f"[dim]Video is {duration:.0f}s, using long-running transcription...[/dim]"
+                )
 
                 gcs_uri = self._upload_to_gcs(audio_path)
                 audio = speech.RecognitionAudio(uri=gcs_uri)
 
-                with console.status("[bold green]Transcribing with timestamps (this may take a while)..."):
+                with console.status(
+                    "[bold green]Transcribing with timestamps (this may take a while)..."
+                ):
                     operation = client.long_running_recognize(config=config, audio=audio)
                     response = operation.result(timeout=600)
             else:
@@ -294,11 +304,13 @@ class TranscriptionTool(BaseTool):
 
             for result in response.results:
                 for word_info in result.alternatives[0].words:
-                    words.append({
-                        "word": word_info.word,
-                        "start_time": word_info.start_time.total_seconds(),
-                        "end_time": word_info.end_time.total_seconds(),
-                    })
+                    words.append(
+                        {
+                            "word": word_info.word,
+                            "start_time": word_info.start_time.total_seconds(),
+                            "end_time": word_info.end_time.total_seconds(),
+                        }
+                    )
 
         finally:
             # Clean up local audio file

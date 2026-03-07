@@ -4,17 +4,16 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from ..agent import YouTubeAgent
-from ..config import ChannelProfile
 from ..llm.factory import create_llm
-from ..tools.youtube import YouTubeTool, VideoDetails
+from ..tools.youtube import VideoDetails, YouTubeTool
 
 
 class EnhanceRequest(BaseModel):
     """Request to enhance video(s)."""
+
     video_id: str | None = None
     playlist_id: str | None = None
     recent_count: int | None = None
@@ -22,6 +21,7 @@ class EnhanceRequest(BaseModel):
 
 class VideoInfo(BaseModel):
     """Video information for API response."""
+
     video_id: str
     title: str
     description: str
@@ -32,6 +32,7 @@ class VideoInfo(BaseModel):
 
 class EnhancementResult(BaseModel):
     """Enhancement result for a single video."""
+
     video_id: str
     original_title: str
     original_description: str
@@ -46,6 +47,7 @@ class EnhancementResult(BaseModel):
 
 class ApplyRequest(BaseModel):
     """Request to apply enhancement."""
+
     video_id: str
     title: str
     description: str
@@ -79,7 +81,9 @@ def create_app() -> FastAPI:
         youtube = YouTubeTool()
 
         if not youtube.is_available():
-            raise HTTPException(status_code=400, detail="YouTube not configured. Run 'yt-agent auth youtube' first.")
+            raise HTTPException(
+                status_code=400, detail="YouTube not configured. Run 'yt-agent auth youtube' first."
+            )
 
         videos: list[VideoDetails] = []
 

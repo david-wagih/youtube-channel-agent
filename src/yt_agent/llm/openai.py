@@ -12,9 +12,7 @@ class OpenAILLM(BaseLLM):
     def __init__(self, api_key: str | None = None, model: str = "gpt-4o"):
         self.api_key = api_key or settings.openai_api_key
         if not self.api_key:
-            raise ValueError(
-                "OpenAI API key not found. Set OPENAI_API_KEY environment variable."
-            )
+            raise ValueError("OpenAI API key not found. Set OPENAI_API_KEY environment variable.")
         self.model = model
         self.client = AsyncOpenAI(api_key=self.api_key)
 

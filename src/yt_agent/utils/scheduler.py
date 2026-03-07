@@ -6,7 +6,6 @@ import pytz
 
 from ..config import settings
 
-
 WEEKDAY_MAP = {
     "monday": 0,
     "tuesday": 1,

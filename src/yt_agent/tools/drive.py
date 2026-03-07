@@ -1,21 +1,19 @@
 """Google Drive integration tool for downloading videos."""
 
-import io
 import re
 import tempfile
 from pathlib import Path
 
+from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn, DownloadColumn
+from rich.progress import BarColumn, DownloadColumn, Progress, SpinnerColumn, TextColumn
 
 from ..config import get_credentials_dir
 from .base import BaseTool, ToolResult
-
 
 console = Console()
 
@@ -195,14 +193,18 @@ class GoogleDriveTool(BaseTool):
         service = self._get_service()
 
         # Get file metadata
-        file_metadata = service.files().get(
-            fileId=file_id,
-            fields="name,size,mimeType",
-        ).execute()
+        file_metadata = (
+            service.files()
+            .get(
+                fileId=file_id,
+                fields="name,size,mimeType",
+            )
+            .execute()
+        )
 
         file_name = file_metadata.get("name", f"{file_id}.mp4")
         file_size = int(file_metadata.get("size", 0))
-        mime_type = file_metadata.get("mimeType", "")
+        file_metadata.get("mimeType", "")
 
         console.print(f"[bold]Downloading:[/bold] {file_name}")
         if file_size:
@@ -254,10 +256,14 @@ class GoogleDriveTool(BaseTool):
         file_id = extract_file_id(url_or_id)
         service = self._get_service()
 
-        metadata = service.files().get(
-            fileId=file_id,
-            fields="id,name,size,mimeType,createdTime,modifiedTime",
-        ).execute()
+        metadata = (
+            service.files()
+            .get(
+                fileId=file_id,
+                fields="id,name,size,mimeType,createdTime,modifiedTime",
+            )
+            .execute()
+        )
 
         return {
             "id": metadata.get("id"),

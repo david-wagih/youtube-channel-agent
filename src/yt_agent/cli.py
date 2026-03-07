@@ -15,7 +15,6 @@ from .config import ChannelProfile, settings
 from .llm.factory import create_llm
 from .utils.scheduler import calculate_next_publish_time, format_publish_time
 
-
 app = typer.Typer(
     name="yt-agent",
     help="AI-powered YouTube channel management agent",
@@ -37,17 +36,20 @@ def publish(
     ),
     topic: Optional[str] = typer.Option(
         None,
-        "--topic", "-t",
+        "--topic",
+        "-t",
         help="Brief description of the video topic (skips transcription)",
     ),
     thumbnail: Optional[Path] = typer.Option(
         None,
-        "--thumbnail", "-i",
+        "--thumbnail",
+        "-i",
         help="Path to thumbnail image (JPG/PNG)",
     ),
     playlist: Optional[str] = typer.Option(
         None,
-        "--playlist", "-l",
+        "--playlist",
+        "-l",
         help="Playlist ID to add the video to",
     ),
     no_transcribe: bool = typer.Option(
@@ -57,7 +59,8 @@ def publish(
     ),
     provider: Optional[str] = typer.Option(
         None,
-        "--provider", "-p",
+        "--provider",
+        "-p",
         help="LLM provider to use (claude/openai)",
     ),
 ):
@@ -109,12 +112,14 @@ def optimize(
     ),
     transcript_file: Optional[Path] = typer.Option(
         None,
-        "--transcript", "-f",
+        "--transcript",
+        "-f",
         help="Path to transcript file",
     ),
     provider: Optional[str] = typer.Option(
         None,
-        "--provider", "-p",
+        "--provider",
+        "-p",
         help="LLM provider to use (claude/openai)",
     ),
 ):
@@ -136,23 +141,27 @@ def optimize(
         optimizer = SEOOptimizer(llm)
 
         with console.status("[bold green]Generating SEO-optimized metadata..."):
-            metadata = asyncio.run(
-                optimizer.optimize(topic=topic, transcript=transcript)
-            )
+            metadata = asyncio.run(optimizer.optimize(topic=topic, transcript=transcript))
 
         console.print("\n[bold]Generated Metadata:[/bold]\n")
-        console.print(Panel.fit(
-            f"[bold cyan]{metadata.title}[/bold cyan]",
-            title="Title",
-        ))
-        console.print(Panel(
-            metadata.description,
-            title="Description",
-        ))
-        console.print(Panel(
-            ", ".join(metadata.tags),
-            title="Tags",
-        ))
+        console.print(
+            Panel.fit(
+                f"[bold cyan]{metadata.title}[/bold cyan]",
+                title="Title",
+            )
+        )
+        console.print(
+            Panel(
+                metadata.description,
+                title="Description",
+            )
+        )
+        console.print(
+            Panel(
+                ", ".join(metadata.tags),
+                title="Tags",
+            )
+        )
 
     except Exception as e:
         console.print(f"[bold red]Error:[/bold red] {e}")
@@ -163,12 +172,14 @@ def optimize(
 def schedule(
     day: Optional[str] = typer.Option(
         None,
-        "--day", "-d",
+        "--day",
+        "-d",
         help="Day of week (e.g., Saturday)",
     ),
     time: Optional[str] = typer.Option(
         None,
-        "--time", "-t",
+        "--time",
+        "-t",
         help="Time in HH:MM format (e.g., 19:00)",
     ),
 ):
@@ -183,7 +194,9 @@ def schedule(
             target_day=day,
             target_time=time,
         )
-        console.print(f"\nNext publish time: [bold green]{format_publish_time(next_time)}[/bold green]")
+        console.print(
+            f"\nNext publish time: [bold green]{format_publish_time(next_time)}[/bold green]"
+        )
 
     except ValueError as e:
         console.print(f"[bold red]Error:[/bold red] {e}")
@@ -198,17 +211,20 @@ def enhance(
     ),
     playlist: Optional[str] = typer.Option(
         None,
-        "--playlist", "-p",
+        "--playlist",
+        "-p",
         help="Playlist ID to enhance all videos from",
     ),
     recent: Optional[int] = typer.Option(
         None,
-        "--recent", "-r",
+        "--recent",
+        "-r",
         help="Enhance N most recent channel videos",
     ),
     interactive: bool = typer.Option(
         False,
-        "--interactive", "-i",
+        "--interactive",
+        "-i",
         help="Interactively select which videos to enhance",
     ),
     dry_run: bool = typer.Option(
@@ -285,11 +301,11 @@ def config_show():
     table.add_row("Schedule Time", settings.default_schedule_time)
     table.add_row(
         "Anthropic API Key",
-        "****" + settings.anthropic_api_key[-4:] if settings.anthropic_api_key else "Not set"
+        "****" + settings.anthropic_api_key[-4:] if settings.anthropic_api_key else "Not set",
     )
     table.add_row(
         "OpenAI API Key",
-        "****" + settings.openai_api_key[-4:] if settings.openai_api_key else "Not set"
+        "****" + settings.openai_api_key[-4:] if settings.openai_api_key else "Not set",
     )
 
     console.print(table)
@@ -318,10 +334,7 @@ def config_profile():
         profile.social_links = links
 
         # Default hashtags
-        hashtags_str = Prompt.ask(
-            "\nDefault hashtags (comma-separated)",
-            default=""
-        )
+        hashtags_str = Prompt.ask("\nDefault hashtags (comma-separated)", default="")
         if hashtags_str:
             profile.default_hashtags = [
                 f"#{h.strip().lstrip('#')}" for h in hashtags_str.split(",")
@@ -336,9 +349,10 @@ def config_profile():
 
         table.add_row("Channel Name", profile.channel_name or "")
         table.add_row("Business Email", profile.business_email or "")
-        table.add_row("Social Links", "\n".join(
-            f"{k}: {v}" for k, v in profile.social_links.items()
-        ) or "None")
+        table.add_row(
+            "Social Links",
+            "\n".join(f"{k}: {v}" for k, v in profile.social_links.items()) or "None",
+        )
         table.add_row("Default Hashtags", " ".join(profile.default_hashtags) or "None")
 
         console.print(table)
@@ -364,8 +378,8 @@ def auth_youtube():
     4. Download client_secrets.json
     5. Save it to: ~/.config/yt-agent/credentials/client_secrets.json
     """
-    from .tools.youtube import YouTubeTool
     from .config import get_credentials_dir
+    from .tools.youtube import YouTubeTool
 
     creds_dir = get_credentials_dir()
     client_secrets = creds_dir / "client_secrets.json"
@@ -386,10 +400,13 @@ def auth_youtube():
     if youtube.authenticate():
         # Show channel info
         import asyncio
+
         try:
             info = asyncio.run(youtube.get_channel_info())
             if info:
-                console.print(f"\n[bold]Connected to channel:[/bold] {info.get('title', 'Unknown')}")
+                console.print(
+                    f"\n[bold]Connected to channel:[/bold] {info.get('title', 'Unknown')}"
+                )
                 console.print(f"Subscribers: {info.get('subscriber_count', '0')}")
                 console.print(f"Videos: {info.get('video_count', '0')}")
         except Exception:
@@ -405,8 +422,8 @@ def auth_drive():
     Uses the same client_secrets.json as YouTube authentication.
     Make sure you've also enabled "Google Drive API" in your Cloud project.
     """
-    from .tools.drive import GoogleDriveTool
     from .config import get_credentials_dir
+    from .tools.drive import GoogleDriveTool
 
     creds_dir = get_credentials_dir()
     client_secrets = creds_dir / "client_secrets.json"
@@ -439,12 +456,14 @@ def transcribe(
     ),
     language: str = typer.Option(
         "ar-EG",
-        "--language", "-l",
+        "--language",
+        "-l",
         help="Language code (ar-EG for Arabic, en-US for English)",
     ),
     output: Optional[Path] = typer.Option(
         None,
-        "--output", "-o",
+        "--output",
+        "-o",
         help="Save transcript to file",
     ),
 ):
@@ -502,7 +521,8 @@ def transcribe(
 def web(
     port: int = typer.Option(
         8000,
-        "--port", "-p",
+        "--port",
+        "-p",
         help="Port to run the web server on",
     ),
     host: str = typer.Option(
@@ -512,7 +532,8 @@ def web(
     ),
     reload: bool = typer.Option(
         False,
-        "--reload", "-r",
+        "--reload",
+        "-r",
         help="Auto-reload on code changes (development mode)",
     ),
 ):
@@ -525,7 +546,7 @@ def web(
     """
     import uvicorn
 
-    console.print(f"\n[bold]Starting YouTube Agent web interface...[/bold]")
+    console.print("\n[bold]Starting YouTube Agent web interface...[/bold]")
     console.print(f"Open [link=http://{host}:{port}]http://{host}:{port}[/link] in your browser")
     if reload:
         console.print("[yellow]Development mode: auto-reload enabled[/yellow]")
@@ -536,6 +557,7 @@ def web(
         uvicorn.run("yt_agent.web.app:create_app", host=host, port=port, reload=True, factory=True)
     else:
         from .web import create_app
+
         app = create_app()
         uvicorn.run(app, host=host, port=port)
 
