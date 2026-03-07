@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Agent - SEO Enhancement</title>
+    <style>
+        :root {
+            --bg-primary: #0f0f0f;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #272727;
+            --text-primary: #f1f1f1;
+            --text-secondary: #aaa;
+            --accent: #3ea6ff;
+            --accent-hover: #65b8ff;
+            --success: #2e7d32;
+            --warning: #f59e0b;
+            --border: #3f3f3f;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 500;
+        }
+
+        .channel-info {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Input Section */
+        .input-section {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        /* Video List */
+        .video-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .video-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .video-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .video-card.selected {
+            border: 2px solid var(--accent);
+        }
+
+        .video-thumbnail {
+            width: 100%;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+            background: var(--bg-tertiary);
+        }
+
+        .video-info {
+            padding: 16px;
+        }
+
+        .video-title {
+            font-size: 1rem;
+            margin-bottom: 8px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .video-stats {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        /* Enhancement Panel */
+        .enhancement-panel {
+            display: none;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .enhancement-panel.active {
+            display: block;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 900px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .comparison-column {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .comparison-column h3 {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .comparison-column.enhanced h3 {
+            color: var(--accent);
+        }
+
+        /* Bilingual Text Support */
+        .bilingual-text {
+            direction: auto;
+            unicode-bidi: plaintext;
+        }
+
+        .rtl-text {
+            direction: rtl;
+            text-align: right;
+        }
+
+        .ltr-text {
+            direction: ltr;
+            text-align: left;
+        }
+
+        /* Field Styles */
+        .field {
+            margin-bottom: 20px;
+        }
+
+        .field-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .field-value {
+            background: var(--bg-primary);
+            padding: 16px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .field-value.title {
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+
+        .field-value.description {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .tags-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tag {
+            background: var(--bg-primary);
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 0.85rem;
+        }
+
+        .enhanced .tag {
+            background: rgba(62, 166, 255, 0.15);
+            color: var(--accent);
+        }
+
+        /* Changes Summary */
+        .changes-summary {
+            background: rgba(46, 125, 50, 0.1);
+            border: 1px solid var(--success);
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 24px;
+        }
+
+        .changes-summary h4 {
+            color: var(--success);
+            margin-bottom: 12px;
+        }
+
+        .changes-summary ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .changes-summary li {
+            padding: 4px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .changes-summary li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--success);
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            justify-content: flex-end;
+        }
+
+        /* Loading State */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 12px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast Notifications */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            border-color: var(--success);
+        }
+
+        .toast.error {
+            border-color: #dc2626;
+        }
+
+        /* Editable Fields */
+        .editable-field {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            width: 100%;
+            resize: vertical;
+        }
+
+        .editable-field:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        textarea.editable-field {
+            min-height: 200px;
+        }
+
+        input.editable-field {
+            padding: 12px 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>YouTube Agent</h1>
+            <div class="channel-info" id="channelInfo">Loading channel...</div>
+        </header>
+
+        <div class="input-section">
+            <div class="input-group">
+                <input type="text" id="videoInput" placeholder="Video ID, Playlist ID, or number of recent videos">
+                <button class="btn-primary" onclick="fetchVideos()">Load Videos</button>
+                <button class="btn-secondary" onclick="loadRecent()">Recent 10</button>
+            </div>
+        </div>
+
+        <div id="videoList" class="video-list"></div>
+
+        <div id="enhancementPanel" class="enhancement-panel">
+            <div class="panel-header">
+                <h2>Enhancement Preview</h2>
+                <button class="btn-secondary" onclick="closePanel()">Close</button>
+            </div>
+
+            <div id="enhancementContent"></div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        let currentEnhancement = null;
+
+        // Load channel info on page load
+        async function loadChannelInfo() {
+            try {
+                const res = await fetch('/api/channel');
+                const data = await res.json();
+                document.getElementById('channelInfo').textContent =
+                    `${data.title} • ${Number(data.subscriber_count).toLocaleString()} subscribers`;
+            } catch (e) {
+                document.getElementById('channelInfo').textContent = 'Not connected';
+            }
+        }
+
+        // Detect if text contains Arabic
+        function containsArabic(text) {
+            return /[\u0600-\u06FF]/.test(text);
+        }
+
+        // Get direction class based on content
+        function getDirectionClass(text) {
+            if (containsArabic(text)) {
+                // If it starts with Arabic, use RTL
+                const firstChar = text.trim().charAt(0);
+                if (/[\u0600-\u06FF]/.test(firstChar)) {
+                    return 'rtl-text';
+                }
+            }
+            return 'bilingual-text';
+        }
+
+        // Fetch videos based on input
+        async function fetchVideos() {
+            const input = document.getElementById('videoInput').value.trim();
+            let url = '/api/videos';
+
+            if (input) {
+                if (input.startsWith('PL')) {
+                    url += `?playlist_id=${input}`;
+                } else if (/^\d+$/.test(input)) {
+                    url += `?recent=${input}`;
+                } else {
+                    url += `?video_id=${input}`;
+                }
+            }
+
+            document.getElementById('videoList').innerHTML = '<div class="loading"><div class="spinner"></div>Loading videos...</div>';
+
+            try {
+                const res = await fetch(url);
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail);
+                }
+                const videos = await res.json();
+                renderVideoList(videos);
+            } catch (e) {
+                showToast(e.message, 'error');
+                document.getElementById('videoList').innerHTML = '';
+            }
+        }
+
+        // Load recent videos
+        function loadRecent() {
+            document.getElementById('videoInput').value = '10';
+            fetchVideos();
+        }
+
+        // Render video list
+        function renderVideoList(videos) {
+            const container = document.getElementById('videoList');
+
+            if (videos.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-secondary)">No videos found</p>';
+                return;
+            }
+
+            container.innerHTML = videos.map(v => `
+                <div class="video-card" onclick="enhanceVideo('${v.video_id}')">
+                    <img class="video-thumbnail" src="${v.thumbnail_url || ''}" alt="${v.title}" onerror="this.style.display='none'">
+                    <div class="video-info">
+                        <div class="video-title ${getDirectionClass(v.title)}">${escapeHtml(v.title)}</div>
+                        <div class="video-stats">${Number(v.view_count).toLocaleString()} views • ${v.tags.length} tags</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Enhance a video
+        async function enhanceVideo(videoId) {
+            const panel = document.getElementById('enhancementPanel');
+            const content = document.getElementById('enhancementContent');
+
+            panel.classList.add('active');
+            content.innerHTML = '<div class="loading"><div class="spinner"></div>Generating enhancement...</div>';
+
+            try {
+                const res = await fetch(`/api/enhance?video_id=${videoId}`, { method: 'POST' });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail);
+                }
+
+                currentEnhancement = await res.json();
+                renderEnhancement(currentEnhancement);
+            } catch (e) {
+                showToast(e.message, 'error');
+                panel.classList.remove('active');
+            }
+        }
+
+        // Render enhancement comparison
+        function renderEnhancement(data) {
+            const changesList = Array.isArray(data.changes_summary)
+                ? data.changes_summary
+                : [data.changes_summary];
+
+            document.getElementById('enhancementContent').innerHTML = `
+                <div class="comparison-grid">
+                    <div class="comparison-column original">
+                        <h3>Original</h3>
+
+                        <div class="field">
+                            <div class="field-label">Title</div>
+                            <div class="field-value title ${getDirectionClass(data.original_title)}">${escapeHtml(data.original_title)}</div>
+                        </div>
+
+                        <div class="field">
+                            <div class="field-label">Description</div>
+                            <div class="field-value description ${getDirectionClass(data.original_description)}">${escapeHtml(data.original_description)}</div>
+                        </div>
+
+                        <div class="field">
+                            <div class="field-label">Tags (${data.original_tags.length})</div>
+                            <div class="tags-list">
+                                ${data.original_tags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="comparison-column enhanced">
+                        <h3>Enhanced</h3>
+
+                        <div class="field">
+                            <div class="field-label">Title</div>
+                            <input type="text" class="editable-field title ${getDirectionClass(data.enhanced_title)}"
+                                   id="editTitle" value="${escapeHtml(data.enhanced_title)}">
+                        </div>
+
+                        <div class="field">
+                            <div class="field-label">Description</div>
+                            <textarea class="editable-field description ${getDirectionClass(data.enhanced_description)}"
+                                      id="editDescription">${escapeHtml(data.enhanced_description)}</textarea>
+                        </div>
+
+                        <div class="field">
+                            <div class="field-label">Tags (${data.enhanced_tags.length})</div>
+                            <input type="text" class="editable-field" id="editTags"
+                                   value="${data.enhanced_tags.map(t => escapeHtml(t)).join(', ')}">
+                        </div>
+
+                        <div class="field">
+                            <div class="field-label">Hashtags</div>
+                            <div class="tags-list">
+                                ${data.enhanced_hashtags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="changes-summary">
+                    <h4>Changes Made</h4>
+                    <ul>
+                        ${changesList.map(c => `<li>${escapeHtml(c)}</li>`).join('')}
+                    </ul>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn-secondary" onclick="closePanel()">Cancel</button>
+                    <button class="btn-success" onclick="applyEnhancement()">Apply Changes</button>
+                </div>
+            `;
+        }
+
+        // Apply enhancement
+        async function applyEnhancement() {
+            if (!currentEnhancement) return;
+
+            const title = document.getElementById('editTitle').value;
+            const description = document.getElementById('editDescription').value;
+            const tags = document.getElementById('editTags').value.split(',').map(t => t.trim()).filter(t => t);
+
+            try {
+                const res = await fetch('/api/apply', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        video_id: currentEnhancement.video_id,
+                        title,
+                        description,
+                        tags
+                    })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail);
+                }
+
+                showToast('Enhancement applied successfully!', 'success');
+                closePanel();
+                fetchVideos(); // Refresh the list
+            } catch (e) {
+                showToast(e.message, 'error');
+            }
+        }
+
+        // Close panel
+        function closePanel() {
+            document.getElementById('enhancementPanel').classList.remove('active');
+            currentEnhancement = null;
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Initialize
+        loadChannelInfo();
+    </script>
+</body>
+</html>
