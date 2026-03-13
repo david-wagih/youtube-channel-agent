@@ -15,6 +15,11 @@ yt-agent --help
 yt-agent publish ./video.mp4
 yt-agent publish ./video.mp4 --thumbnail ./thumb.jpg --playlist PLxxxxxxxx
 
+# Enhance (update metadata of an already-published video)
+yt-agent enhance --recent 1                  # most recently uploaded video
+yt-agent enhance <VIDEO_ID>                  # specific video by ID
+yt-agent enhance --recent 1 --dry-run        # preview without applying
+
 # Run tests
 pytest
 pytest tests/test_agent.py          # single file
@@ -28,6 +33,19 @@ ruff format src/
 ## Architecture
 
 The project is a CLI tool (`yt-agent`) that orchestrates a full YouTube publish workflow. The entry point is `src/yt_agent/cli.py` (typer), which delegates to `agent.py` for orchestration.
+
+### Enhance Flow
+
+Use `yt-agent enhance` to update metadata of an already-published video without re-uploading. It fetches current title/description/tags from YouTube, regenerates them using `SEO_ENHANCEMENT_PROMPT`, shows a before/after comparison, then patches the video in place via `YouTubeTool.update_metadata()`.
+
+```
+cli.py enhance command
+  → YouTubeAgent.run_enhance_workflow()
+      → YouTubeTool.get_video_details() / list_channel_videos() / list_playlist_videos()
+      → SEOOptimizer.enhance()           [title, description, tags via SEO_ENHANCEMENT_PROMPT]
+      → VideoEnhancement.display_comparison()
+      → YouTubeTool.update_metadata()    [patches snippet in place, no re-upload]
+```
 
 ### Publish Flow
 

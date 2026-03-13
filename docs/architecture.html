@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>yt-agent Architecture</title>
+    <script src="https://unpkg.com/cytoscape@3.29.2/dist/cytoscape.min.js"></script>
+    <script src="https://unpkg.com/dagre@0.8.5/dist/dagre.min.js"></script>
+    <script src="https://unpkg.com/cytoscape-dagre@2.5.0/cytoscape-dagre.js"></script>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        background: #0f1117;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        overflow: hidden;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* ── Top bar ── */
+      #topbar {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 0;
+        padding: 0 20px;
+        height: 52px;
+        background: rgba(15, 17, 23, 0.97);
+        border-bottom: 1px solid #1e293b;
+        z-index: 20;
+      }
+
+      #topbar h1 {
+        color: #f8fafc;
+        font-size: 0.95rem;
+        font-weight: 700;
+        white-space: nowrap;
+        padding-right: 20px;
+        border-right: 1px solid #1e293b;
+        margin-right: 12px;
+      }
+
+      /* Tabs */
+      #tabs {
+        display: flex;
+        gap: 2px;
+        flex: 1;
+      }
+
+      .tab {
+        background: transparent;
+        border: none;
+        color: #4a5568;
+        padding: 6px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.82rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: background 0.15s, color 0.15s;
+        white-space: nowrap;
+      }
+
+      .tab:hover { background: #1e2a3a; color: #94a3b8; }
+
+      .tab.active {
+        background: #1e2a3a;
+        color: #e2e8f0;
+        border: 1px solid #2d3748;
+      }
+
+      .tab-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      /* Controls */
+      #controls {
+        display: flex;
+        gap: 4px;
+        padding-left: 16px;
+        border-left: 1px solid #1e293b;
+        margin-left: 8px;
+      }
+
+      #controls button {
+        background: transparent;
+        border: 1px solid #1e293b;
+        color: #4a5568;
+        padding: 4px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 0.78rem;
+        transition: background 0.15s, color 0.15s;
+      }
+
+      #controls button:hover { background: #1e2a3a; color: #94a3b8; border-color: #2d3748; }
+
+      /* ── Canvas ── */
+      #cy { flex: 1; width: 100%; }
+
+      /* ── Legend ── */
+      #legend {
+        position: fixed;
+        bottom: 16px;
+        left: 16px;
+        z-index: 20;
+        background: rgba(15, 17, 23, 0.92);
+        backdrop-filter: blur(8px);
+        border: 1px solid #1e293b;
+        border-radius: 10px;
+        padding: 10px 14px;
+      }
+
+      .legend-title {
+        font-size: 0.65rem;
+        color: #334155;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 7px;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 0.74rem;
+        color: #475569;
+        margin-bottom: 4px;
+      }
+
+      .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+      /* ── Tooltip ── */
+      #tooltip {
+        position: fixed;
+        background: #131825;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 0.78rem;
+        color: #94a3b8;
+        max-width: 280px;
+        line-height: 1.55;
+        z-index: 30;
+        display: none;
+        pointer-events: none;
+        white-space: pre-line;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      }
+
+      #tooltip strong {
+        display: block;
+        color: #e2e8f0;
+        font-size: 0.82rem;
+        margin-bottom: 6px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid #1e293b;
+      }
+
+      /* ── Hint ── */
+      #hint {
+        position: fixed;
+        bottom: 16px;
+        right: 16px;
+        color: #1e293b;
+        font-size: 0.7rem;
+        text-align: right;
+        line-height: 1.7;
+        z-index: 20;
+      }
+
+      /* ── View label ── */
+      #view-label {
+        position: fixed;
+        top: 68px;
+        right: 16px;
+        color: #1e293b;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        z-index: 20;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="topbar">
+      <h1>yt-agent</h1>
+
+      <div id="tabs">
+        <button class="tab active" data-view="overview">
+          <span class="tab-dot" style="background:#475569"></span> Overview
+        </button>
+        <button class="tab" data-view="publish">
+          <span class="tab-dot" style="background:#3b82f6"></span> publish
+        </button>
+        <button class="tab" data-view="enhance">
+          <span class="tab-dot" style="background:#8b5cf6"></span> enhance
+        </button>
+        <button class="tab" data-view="auth">
+          <span class="tab-dot" style="background:#14b8a6"></span> auth
+        </button>
+        <button class="tab" data-view="infra">
+          <span class="tab-dot" style="background:#f97316"></span> Infrastructure
+        </button>
+      </div>
+
+      <div id="controls">
+        <button id="btn-zoomin">＋</button>
+        <button id="btn-zoomout">－</button>
+        <button id="btn-fit">Fit</button>
+      </div>
+    </div>
+
+    <div id="view-label"></div>
+
+    <div id="legend">
+      <div class="legend-title">Layers</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>CLI</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div>Orchestrator</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>SEO</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div>LLM</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#14b8a6"></div>Tools</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#6b7280"></div>Config</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#374151"></div>External</div>
+    </div>
+
+    <div id="tooltip"></div>
+    <div id="hint">Scroll · Drag to pan · Click node for details</div>
+
+    <div id="cy"></div>
+
+    <script>
+      cytoscape.use(cytoscapeDagre);
+
+      // ── Node definitions ──────────────────────────────────────────────────
+      const NODE_DEFS = {
+        CMD_PUBLISH: { label: 'publish\n./video.mp4', group: 'cli', title: 'yt-agent publish', info: 'Uploads a new video end-to-end.\nFlags: --thumbnail, --playlist\nFlow: download → transcribe → SEO → review → upload\ncli.py → run_publish_workflow()' },
+        CMD_ENHANCE: { label: 'enhance\n--recent / --video', group: 'cli', title: 'yt-agent enhance', info: 'Updates metadata of a published video.\nNo re-upload needed.\nFlags: --recent N, --video ID, --playlist ID, --dry-run\ncli.py → run_enhance_workflow()' },
+        CMD_AUTH:    { label: 'auth\nyoutube · drive', group: 'cli', title: 'yt-agent auth', info: 'Runs OAuth 2.0 flow for YouTube or Drive.\nTokens saved to:\n~/.config/yt-agent/credentials/youtube_token.json\n~/.config/yt-agent/credentials/drive_token.json' },
+        CMD_OTHER:   { label: 'optimize · transcribe\nschedule · playlists · web', group: 'cli', title: 'Other CLI commands', info: 'optimize — Generate SEO without uploading\ntranscribe — Standalone audio transcription\nschedule — Show next publish time\nplaylists — List YouTube playlists\nweb — Start FastAPI web UI' },
+
+        PUB_WF:  { label: 'run_publish\n_workflow()', group: 'orch', title: 'run_publish_workflow()', info: 'Full publish orchestration in agent.py:\n1. Detect Drive URL → download\n2. Transcribe with word timestamps\n3. Generate chapter markers\n4. SEO optimize → build PublishPlan\n5. Show Review Loop\n6. execute_plan() on approval' },
+        ENH_WF:  { label: 'run_enhance\n_workflow()', group: 'orch', title: 'run_enhance_workflow()', info: 'Enhancement orchestration in agent.py:\n1. Fetch video(s) from YouTube\n2. SEO enhance for each video\n3. Show before/after comparison\n4. Show Review Loop\n5. Apply updates on approval' },
+        REVIEW:  { label: 'Review Loop\napprove / edit / cancel', group: 'orch', title: 'Interactive Review Loop', info: 'Shows PublishPlan or VideoEnhancement.\nUser choices: approve / edit / cancel\nFor "edit": opens inline editor for title & tags\nShared by both publish and enhance flows' },
+        EXEC:    { label: 'execute_plan()\nupdate_metadata()', group: 'orch', title: 'execute_plan() / update_metadata()', info: 'Publish: uploads video file in chunks,\nsets thumbnail, adds to playlist, schedules.\nEnhance: patches video snippet via\nYouTube videos.update() — no re-upload.' },
+
+        OPT:    { label: 'optimize()\nnew video metadata', group: 'seo', title: 'SEOOptimizer.optimize()', info: 'Generates metadata for a new video.\nPrompt: SEO_OPTIMIZATION_PROMPT\nInput: topic + transcript + context\nOutput JSON: title, description, tags, hashtags\nLanguage: Arabic Egyptian + English tech terms' },
+        ENH_OP: { label: 'enhance()\nexisting metadata', group: 'seo', title: 'SEOOptimizer.enhance()', info: 'Improves metadata of a published video.\nPrompt: SEO_ENHANCEMENT_PROMPT\nInput: current title/description/tags + view_count\nOutput JSON: enhanced fields + changes_summary' },
+        CHAP:   { label: 'generate_chapters()\nfrom word timestamps', group: 'seo', title: 'SEOOptimizer.generate_chapters()', info: 'Generates YouTube chapter markers.\nPrompt: CHAPTER_GENERATION_PROMPT\nInput: [{word, start_time, end_time}] + duration\nOutput: [{time: "MM:SS", title: "..."}]\nOnly for videos > 60s. First chapter = 0:00' },
+
+        YT:    { label: 'YouTubeTool\nyoutube.py', group: 'tools', title: 'YouTubeTool', info: 'YouTube Data API v3 wrapper.\nAuth: OAuth 2.0 (youtube_token.json)\nupload_video(), set_thumbnail(),\nadd_to_playlist(), update_metadata(),\nget_video_details(), list_channel_videos()\nVideo category: 28 (Science & Technology)' },
+        DRIVE: { label: 'GoogleDriveTool\ndrive.py', group: 'tools', title: 'GoogleDriveTool', info: 'Google Drive API wrapper.\nAuth: OAuth 2.0 (drive_token.json)\ndownload_video(), get_file_info()\nParses /d/FILE_ID/ and ?id=FILE_ID URLs' },
+        TRANS: { label: 'TranscriptionTool\ntranscribe.py', group: 'tools', title: 'TranscriptionTool', info: 'Google Cloud Speech-to-Text.\nAuth: GOOGLE_APPLICATION_CREDENTIALS\nShort audio (< 55s): inline recognize()\nLong audio (> 55s): GCS → long_running_recognize()\nExtracts audio via moviepy (16kHz mono WAV)' },
+
+        FACTORY:    { label: 'factory.py\ncreate_llm()', group: 'llm', title: 'LLM Factory', info: 'create_llm(provider=None)\nReads default_llm_provider from settings.\nReturns ClaudeLLM or OpenAILLM.\nBoth implement BaseLLM:\n  generate() → LLMResponse\n  generate_json() → dict' },
+        CLAUDE_LLM: { label: 'ClaudeLLM\nclaude-sonnet-4', group: 'llm', title: 'ClaudeLLM', info: 'llm/claude.py\nModel: claude-sonnet-4-20250514\nUses AsyncAnthropic client\nDefault LLM provider\nRequires: ANTHROPIC_API_KEY' },
+        OPENAI_LLM: { label: 'OpenAILLM\ngpt-4o', group: 'llm', title: 'OpenAILLM', info: 'llm/openai.py\nModel: gpt-4o\nUses AsyncOpenAI client\nAlternative LLM provider\nRequires: OPENAI_API_KEY' },
+
+        CONFIG:  { label: 'config.py\nSettings + ChannelProfile', group: 'cfg', title: 'config.py', info: 'Settings from .env:\n  ANTHROPIC_API_KEY, OPENAI_API_KEY\n  GOOGLE_APPLICATION_CREDENTIALS, GCS_BUCKET\nChannelProfile → ~/.config/yt-agent/profile.yaml\n  channel_name, social_links, default_hashtags' },
+        PROMPTS: { label: 'utils/prompts.py\nSEO · Enhance · Chapters', group: 'cfg', title: 'utils/prompts.py', info: 'All LLM prompt templates:\n• SEO_OPTIMIZATION_PROMPT — new videos\n• SEO_ENHANCEMENT_PROMPT — existing videos\n• CHAPTER_GENERATION_PROMPT — timestamps\n• TRANSCRIPT_ANALYSIS_PROMPT — topics\nArabic Egyptian + English technical terms' },
+        SCHED:   { label: 'utils/scheduler.py\nSat 19:00 Cairo', group: 'cfg', title: 'utils/scheduler.py', info: 'calculate_next_publish_time()\nDefault: Saturday 19:00 Africa/Cairo\nIf target time passed today → schedules next week\nReturns timezone-aware datetime' },
+
+        YT_API:   { label: 'YouTube\nData API v3', group: 'ext', title: 'YouTube Data API v3', info: 'OAuth scopes: youtube\nvideos.insert, videos.update, videos.list\nplaylistItems.insert, thumbnails.set\nchannels.list, playlists.list' },
+        DRIVE_API: { label: 'Google\nDrive API', group: 'ext', title: 'Google Drive API', info: 'OAuth scope: drive.readonly\nfiles.get, files.export\nDownloads video files by Drive file ID' },
+        SPEECH:   { label: 'Google Cloud\nSpeech-to-Text', group: 'ext', title: 'Google Cloud Speech-to-Text', info: 'Service account auth\nrecognize() for short audio\nlong_running_recognize() for long audio\nSupports ar-EG with word-level timestamps' },
+        GCS:      { label: 'Google Cloud\nStorage (GCS)', group: 'ext', title: 'Google Cloud Storage', info: 'Required for audio > 55 seconds.\nAudio uploaded as WAV before transcription.\nBucket: GCS_BUCKET env var.\nSame service account as Speech-to-Text.' },
+        ANTHRO:   { label: 'Anthropic\nAPI', group: 'ext', title: 'Anthropic API', info: 'Model: claude-sonnet-4-20250514\nAuth: ANTHROPIC_API_KEY\nDefault LLM for all SEO generation' },
+        OAI:      { label: 'OpenAI\nAPI', group: 'ext', title: 'OpenAI API', info: 'Model: gpt-4o\nAuth: OPENAI_API_KEY\nAlternative LLM provider' },
+      };
+
+      // ── All edges ─────────────────────────────────────────────────────────
+      const ALL_EDGES = [
+        { source: 'CMD_PUBLISH', target: 'PUB_WF',    label: 'publish flow' },
+        { source: 'CMD_ENHANCE', target: 'ENH_WF',    label: 'enhance flow' },
+        { source: 'CMD_AUTH',    target: 'YT' },
+        { source: 'CMD_AUTH',    target: 'DRIVE' },
+        { source: 'PUB_WF', target: 'DRIVE',  label: 'Drive URL?' },
+        { source: 'PUB_WF', target: 'TRANS',  label: 'transcribe' },
+        { source: 'PUB_WF', target: 'CHAP',   label: 'chapters' },
+        { source: 'PUB_WF', target: 'OPT',    label: 'optimize' },
+        { source: 'PUB_WF', target: 'REVIEW' },
+        { source: 'REVIEW', target: 'EXEC',   label: 'approved' },
+        { source: 'EXEC',   target: 'YT',     label: 'upload' },
+        { source: 'ENH_WF', target: 'YT',     label: 'fetch video(s)' },
+        { source: 'ENH_WF', target: 'ENH_OP', label: 'enhance' },
+        { source: 'ENH_WF', target: 'REVIEW' },
+        { source: 'OPT',    target: 'FACTORY' },
+        { source: 'ENH_OP', target: 'FACTORY' },
+        { source: 'CHAP',   target: 'FACTORY' },
+        { source: 'FACTORY', target: 'CLAUDE_LLM' },
+        { source: 'FACTORY', target: 'OPENAI_LLM' },
+        { source: 'YT',    target: 'YT_API' },
+        { source: 'DRIVE', target: 'DRIVE_API' },
+        { source: 'TRANS', target: 'GCS',    label: 'audio > 55s' },
+        { source: 'TRANS', target: 'SPEECH' },
+        { source: 'CLAUDE_LLM', target: 'ANTHRO' },
+        { source: 'OPENAI_LLM', target: 'OAI' },
+        { source: 'CONFIG',  target: 'PUB_WF', label: 'settings',        dashed: true },
+        { source: 'CONFIG',  target: 'OPT',    label: 'channel profile',  dashed: true },
+        { source: 'PROMPTS', target: 'OPT',    label: 'prompts',          dashed: true },
+        { source: 'SCHED',   target: 'EXEC',   label: 'publish time',     dashed: true },
+        { source: 'CONFIG',  target: 'ENH_WF', label: 'settings',        dashed: true },
+        { source: 'CONFIG',  target: 'ENH_OP', label: 'channel profile',  dashed: true },
+        { source: 'PROMPTS', target: 'ENH_OP', label: 'prompts',          dashed: true },
+      ];
+
+      // ── Views: which nodes to show ────────────────────────────────────────
+      const VIEWS = {
+        overview: {
+          label: 'Full Overview',
+          nodes: Object.keys(NODE_DEFS),
+        },
+        publish: {
+          label: 'publish flow',
+          nodes: ['CMD_PUBLISH', 'PUB_WF', 'REVIEW', 'EXEC',
+                  'DRIVE', 'TRANS', 'OPT', 'CHAP',
+                  'FACTORY', 'CLAUDE_LLM', 'OPENAI_LLM',
+                  'YT', 'CONFIG', 'PROMPTS', 'SCHED',
+                  'YT_API', 'DRIVE_API', 'SPEECH', 'GCS', 'ANTHRO', 'OAI'],
+        },
+        enhance: {
+          label: 'enhance flow',
+          nodes: ['CMD_ENHANCE', 'ENH_WF', 'REVIEW', 'EXEC',
+                  'ENH_OP', 'FACTORY', 'CLAUDE_LLM', 'OPENAI_LLM',
+                  'YT', 'CONFIG', 'PROMPTS',
+                  'YT_API', 'ANTHRO', 'OAI'],
+        },
+        auth: {
+          label: 'auth flow',
+          nodes: ['CMD_AUTH', 'YT', 'DRIVE', 'CONFIG', 'YT_API', 'DRIVE_API'],
+        },
+        infra: {
+          label: 'Infrastructure',
+          nodes: ['YT', 'DRIVE', 'TRANS',
+                  'FACTORY', 'CLAUDE_LLM', 'OPENAI_LLM',
+                  'CONFIG', 'PROMPTS', 'SCHED',
+                  'YT_API', 'DRIVE_API', 'SPEECH', 'GCS', 'ANTHRO', 'OAI'],
+        },
+      };
+
+      // ── Colors ────────────────────────────────────────────────────────────
+      const COLOR = {
+        cli:   { bg: '#1e3a5f', border: '#3b82f6', text: '#93c5fd' },
+        orch:  { bg: '#2e1b5e', border: '#8b5cf6', text: '#c4b5fd' },
+        seo:   { bg: '#451a03', border: '#f59e0b', text: '#fcd34d' },
+        llm:   { bg: '#3b2103', border: '#f97316', text: '#fdba74' },
+        tools: { bg: '#042f2e', border: '#14b8a6', text: '#5eead4' },
+        cfg:   { bg: '#1c2333', border: '#475569', text: '#94a3b8' },
+        ext:   { bg: '#111827', border: '#374151', text: '#6b7280' },
+      };
+
+      // ── Build element list for a view ─────────────────────────────────────
+      function buildElements(viewKey) {
+        const nodeSet = new Set(VIEWS[viewKey].nodes);
+
+        const nodes = [...nodeSet].map(id => {
+          const d = NODE_DEFS[id];
+          return { data: { id, label: d.label, group: d.group, title: d.title, info: d.info } };
+        });
+
+        const edges = ALL_EDGES
+          .filter(e => nodeSet.has(e.source) && nodeSet.has(e.target))
+          .map((e, i) => ({
+            data: {
+              id: `e_${viewKey}_${i}`,
+              source: e.source,
+              target: e.target,
+              label: e.label || '',
+              dashed: e.dashed || false,
+            },
+          }));
+
+        return [...nodes, ...edges];
+      }
+
+      // ── Cytoscape instance ────────────────────────────────────────────────
+      const cy = cytoscape({
+        container: document.getElementById('cy'),
+        elements: buildElements('overview'),
+        style: [
+          {
+            selector: 'node',
+            style: {
+              label: 'data(label)',
+              'text-valign': 'center', 'text-halign': 'center',
+              'text-wrap': 'wrap', 'text-max-width': '150px',
+              'font-size': '10.5px',
+              width: '170px', height: '58px',
+              shape: 'round-rectangle', 'border-width': '1.5px',
+              padding: '10px',
+            },
+          },
+          ...Object.entries(COLOR).map(([group, c]) => ({
+            selector: `node[group="${group}"]`,
+            style: { 'background-color': c.bg, 'border-color': c.border, color: c.text },
+          })),
+          {
+            selector: 'node.hover',
+            style: { 'border-width': '2.5px', 'border-color': '#fff' },
+          },
+          {
+            selector: 'edge',
+            style: {
+              width: 1.4, 'line-color': '#2d3748',
+              'target-arrow-color': '#2d3748', 'target-arrow-shape': 'triangle',
+              'arrow-scale': 1, 'curve-style': 'bezier',
+              label: 'data(label)', 'font-size': '9px', color: '#4a5568',
+              'text-background-color': '#0f1117', 'text-background-opacity': 0.85,
+              'text-background-padding': '2px', 'text-rotation': 'autorotate',
+            },
+          },
+          {
+            selector: 'edge[?dashed]',
+            style: {
+              'line-style': 'dashed', 'line-dash-pattern': [6, 4],
+              'line-color': '#1e293b', 'target-arrow-color': '#1e293b',
+            },
+          },
+        ],
+        layout: {
+          name: 'dagre', rankDir: 'TB',
+          ranksep: 70, nodesep: 35, padding: 50, animate: false,
+        },
+        wheelSensitivity: 0.25,
+        minZoom: 0.1,
+        maxZoom: 3,
+      });
+
+      // ── Switch view ───────────────────────────────────────────────────────
+      function switchView(viewKey) {
+        tooltip.style.display = 'none';
+        cy.elements().remove();
+        cy.add(buildElements(viewKey));
+        cy.layout({
+          name: 'dagre', rankDir: 'TB',
+          ranksep: 70, nodesep: 35, padding: 50, animate: false,
+        }).run();
+        cy.fit(undefined, 50);
+        document.getElementById('view-label').textContent = VIEWS[viewKey].label;
+      }
+
+      // ── Tabs ──────────────────────────────────────────────────────────────
+      document.querySelectorAll('.tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+          btn.classList.add('active');
+          switchView(btn.dataset.view);
+        });
+      });
+
+      // ── Controls ──────────────────────────────────────────────────────────
+      const mid = () => ({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
+      document.getElementById('btn-zoomin').onclick  = () => cy.zoom({ level: cy.zoom() * 1.3, renderedPosition: mid() });
+      document.getElementById('btn-zoomout').onclick = () => cy.zoom({ level: cy.zoom() / 1.3, renderedPosition: mid() });
+      document.getElementById('btn-fit').onclick     = () => cy.fit(undefined, 50);
+
+      // ── Tooltip ───────────────────────────────────────────────────────────
+      const tooltip = document.getElementById('tooltip');
+
+      cy.on('mouseover', 'node', e => e.target.addClass('hover'));
+      cy.on('mouseout',  'node', e => e.target.removeClass('hover'));
+
+      cy.on('tap', 'node', e => {
+        const d = e.target.data();
+        if (!d.info) return;
+        tooltip.innerHTML = `<strong>${d.title}</strong>${d.info}`;
+        tooltip.style.display = 'block';
+        const rp = e.renderedPosition;
+        tooltip.style.left = Math.min(rp.x + 16, window.innerWidth  - 300) + 'px';
+        tooltip.style.top  = Math.max(rp.y - 20, 60)                        + 'px';
+      });
+
+      cy.on('tap', e => { if (e.target === cy) tooltip.style.display = 'none'; });
+
+      // ── Init ──────────────────────────────────────────────────────────────
+      cy.ready(() => {
+        cy.fit(undefined, 50);
+        document.getElementById('view-label').textContent = VIEWS['overview'].label;
+      });
+    </script>
+  </body>
+</html>
