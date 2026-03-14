@@ -402,10 +402,8 @@ def auth_youtube():
     youtube = YouTubeTool()
     if youtube.authenticate():
         # Show channel info
-        import asyncio
-
         try:
-            info = asyncio.run(youtube.get_channel_info())
+            info = youtube.get_channel_info()
             if info:
                 console.print(
                     f"\n[bold]Connected to channel:[/bold] {info.get('title', 'Unknown')}"
@@ -501,11 +499,9 @@ def transcribe(
         console.print(f"\n[bold]Transcribing:[/bold] {video_path.name}")
         console.print(f"[dim]Language: {language}[/dim]\n")
 
-        transcript = asyncio.run(
-            transcriber.transcribe_video(
-                video_path=str(video_path),
-                language=language,
-            )
+        transcript = transcriber.transcribe_video(
+            video_path=str(video_path),
+            language=language,
         )
 
         if output:
@@ -540,7 +536,7 @@ def playlists():
         raise typer.Exit(1)
 
     try:
-        playlists_list = asyncio.run(youtube.list_playlists())
+        playlists_list = youtube.list_playlists()
 
         if not playlists_list:
             console.print("[yellow]No playlists found.[/yellow]")
