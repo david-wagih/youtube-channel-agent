@@ -8,6 +8,7 @@ from google.cloud import speech, storage
 from rich.console import Console
 
 from ..config import settings
+from ..exceptions import GCSError, TranscriptionError
 from .base import BaseTool, ToolResult
 
 console = Console()
@@ -60,7 +61,7 @@ class TranscriptionTool(BaseTool):
             GCS URI (gs://bucket/path).
         """
         if not settings.gcs_bucket:
-            raise RuntimeError(
+            raise GCSError(
                 "GCS bucket not configured. Set GCS_BUCKET in .env for videos longer than 1 minute."
             )
 
@@ -73,7 +74,7 @@ class TranscriptionTool(BaseTool):
 
         size_mb = local_path.stat().st_size / 1024 / 1024
         console.print(f"[dim]Uploading audio to GCS ({size_mb:.1f} MB)...[/dim]")
-        blob.upload_from_filename(str(local_path))
+        blob.upload_from_filename(str(local_path), timeout=600)
 
         return f"gs://{settings.gcs_bucket}/{blob_name}"
 
@@ -159,7 +160,7 @@ class TranscriptionTool(BaseTool):
             raise FileNotFoundError(f"Video not found: {video_path}")
 
         if not self.is_available():
-            raise RuntimeError(
+            raise TranscriptionError(
                 "Google Cloud credentials not configured. "
                 "Set GOOGLE_APPLICATION_CREDENTIALS environment variable."
             )
@@ -173,6 +174,12 @@ class TranscriptionTool(BaseTool):
         audio_clip = AudioFileClip(str(audio_path))
         duration = audio_clip.duration
         audio_clip.close()
+
+        if duration <= 0:
+            raise TranscriptionError(
+                f"Audio extraction produced an empty clip (duration={duration:.1f}s). "
+                "Ensure the video file contains an audio track."
+            )
 
         client = self._get_speech_client()
 
@@ -251,7 +258,7 @@ class TranscriptionTool(BaseTool):
             raise FileNotFoundError(f"Video not found: {video_path}")
 
         if not self.is_available():
-            raise RuntimeError("Google Cloud credentials not configured.")
+            raise TranscriptionError("Google Cloud credentials not configured.")
 
         # Extract audio
         audio_path = self._extract_audio(video_path)
@@ -262,6 +269,12 @@ class TranscriptionTool(BaseTool):
         audio_clip = AudioFileClip(str(audio_path))
         duration = audio_clip.duration
         audio_clip.close()
+
+        if duration <= 0:
+            raise TranscriptionError(
+                f"Audio extraction produced an empty clip (duration={duration:.1f}s). "
+                "Ensure the video file contains an audio track."
+            )
 
         client = self._get_speech_client()
 

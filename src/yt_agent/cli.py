@@ -12,6 +12,7 @@ from rich.table import Table
 from . import __version__
 from .agent import YouTubeAgent
 from .config import ChannelProfile, settings
+from .exceptions import YTAgentError
 from .llm.factory import create_llm
 from .utils.scheduler import calculate_next_publish_time, format_publish_time
 
@@ -21,6 +22,8 @@ app = typer.Typer(
     no_args_is_help=True,
 )
 console = Console()
+
+_PROVIDER_HELP = "LLM provider to use (claude/openai)"
 
 
 # ============================================================================
@@ -61,7 +64,7 @@ def publish(
         None,
         "--provider",
         "-p",
-        help="LLM provider to use (claude/openai)",
+        help=_PROVIDER_HELP,
     ),
 ):
     """Process and schedule a video for publishing.
@@ -96,7 +99,7 @@ def publish(
         else:
             raise typer.Exit(1)
 
-    except ValueError as e:
+    except (ValueError, YTAgentError) as e:
         console.print(f"[bold red]Error:[/bold red] {e}")
         raise typer.Exit(1)
     except Exception as e:
@@ -120,7 +123,7 @@ def optimize(
         None,
         "--provider",
         "-p",
-        help="LLM provider to use (claude/openai)",
+        help=_PROVIDER_HELP,
     ),
 ):
     """Generate SEO-optimized metadata without uploading.
@@ -235,7 +238,7 @@ def enhance(
     provider: Optional[str] = typer.Option(
         None,
         "--provider",
-        help="LLM provider to use (claude/openai)",
+        help=_PROVIDER_HELP,
     ),
 ):
     """Enhance existing video SEO metadata.
@@ -271,7 +274,7 @@ def enhance(
         if not success:
             raise typer.Exit(1)
 
-    except ValueError as e:
+    except (ValueError, YTAgentError) as e:
         console.print(f"[bold red]Error:[/bold red] {e}")
         raise typer.Exit(1)
     except Exception as e:

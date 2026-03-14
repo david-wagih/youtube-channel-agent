@@ -90,8 +90,8 @@ class ChannelProfile:
         self._data["default_hashtags"] = value
 
     def is_configured(self) -> bool:
-        """Check if profile has minimum required configuration."""
-        return bool(self.channel_name)
+        """Check if profile has the minimum required configuration (channel name)."""
+        return bool(self.channel_name and self.channel_name.strip())
 
 
 # Global settings instance

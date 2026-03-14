@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import pytz
 
 from ..config import settings
+from ..exceptions import ConfigurationError
 
 WEEKDAY_MAP = {
     "monday": 0,
@@ -36,8 +37,22 @@ def calculate_next_publish_time(
     target_time = target_time or settings.default_schedule_time
     timezone = timezone or settings.default_timezone
 
-    # Parse time
-    hour, minute = map(int, target_time.split(":"))
+    # Parse time — must be "HH:MM"
+    parts = target_time.split(":")
+    if len(parts) != 2:
+        raise ConfigurationError(
+            f"Invalid time format: '{target_time}'. Expected HH:MM (e.g. '19:00')."
+        )
+    try:
+        hour, minute = int(parts[0]), int(parts[1])
+    except ValueError:
+        raise ConfigurationError(
+            f"Invalid time format: '{target_time}'. Expected HH:MM (e.g. '19:00')."
+        )
+    if not (0 <= hour <= 23 and 0 <= minute <= 59):
+        raise ConfigurationError(
+            f"Time out of range: '{target_time}'. Hour 0-23, minute 0-59."
+        )
 
     # Get target weekday
     target_weekday = WEEKDAY_MAP.get(target_day)

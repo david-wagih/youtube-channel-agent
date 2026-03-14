@@ -146,7 +146,7 @@
         padding: 10px 14px;
         font-size: 0.78rem;
         color: #94a3b8;
-        max-width: 280px;
+        max-width: 300px;
         line-height: 1.55;
         z-index: 30;
         display: none;
@@ -205,7 +205,7 @@
           <span class="tab-dot" style="background:#8b5cf6"></span> enhance
         </button>
         <button class="tab" data-view="auth">
-          <span class="tab-dot" style="background:#14b8a6"></span> auth
+          <span class="tab-dot" style="background:#10b981"></span> auth
         </button>
         <button class="tab" data-view="infra">
           <span class="tab-dot" style="background:#f97316"></span> Infrastructure
@@ -228,6 +228,7 @@
       <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>SEO</div>
       <div class="legend-item"><div class="legend-dot" style="background:#f97316"></div>LLM</div>
       <div class="legend-item"><div class="legend-dot" style="background:#14b8a6"></div>Tools</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>Auth</div>
       <div class="legend-item"><div class="legend-dot" style="background:#6b7280"></div>Config</div>
       <div class="legend-item"><div class="legend-dot" style="background:#374151"></div>External</div>
     </div>
@@ -242,74 +243,242 @@
 
       // ── Node definitions ──────────────────────────────────────────────────
       const NODE_DEFS = {
-        CMD_PUBLISH: { label: 'publish\n./video.mp4', group: 'cli', title: 'yt-agent publish', info: 'Uploads a new video end-to-end.\nFlags: --thumbnail, --playlist\nFlow: download → transcribe → SEO → review → upload\ncli.py → run_publish_workflow()' },
-        CMD_ENHANCE: { label: 'enhance\n--recent / --video', group: 'cli', title: 'yt-agent enhance', info: 'Updates metadata of a published video.\nNo re-upload needed.\nFlags: --recent N, --video ID, --playlist ID, --dry-run\ncli.py → run_enhance_workflow()' },
-        CMD_AUTH:    { label: 'auth\nyoutube · drive', group: 'cli', title: 'yt-agent auth', info: 'Runs OAuth 2.0 flow for YouTube or Drive.\nTokens saved to:\n~/.config/yt-agent/credentials/youtube_token.json\n~/.config/yt-agent/credentials/drive_token.json' },
-        CMD_OTHER:   { label: 'optimize · transcribe\nschedule · playlists · web', group: 'cli', title: 'Other CLI commands', info: 'optimize — Generate SEO without uploading\ntranscribe — Standalone audio transcription\nschedule — Show next publish time\nplaylists — List YouTube playlists\nweb — Start FastAPI web UI' },
+        // CLI layer
+        CMD_PUBLISH: {
+          label: 'publish\n./video.mp4',
+          group: 'cli',
+          title: 'yt-agent publish',
+          info: 'Uploads a new video end-to-end.\nFlags: --thumbnail, --playlist, --no-transcribe\nFlow: download → transcribe → SEO → review → upload\ncli.py → run_publish_workflow()',
+        },
+        CMD_ENHANCE: {
+          label: 'enhance\n--recent / --video',
+          group: 'cli',
+          title: 'yt-agent enhance',
+          info: 'Updates metadata of a published video.\nNo re-upload needed.\nFlags: --recent N, --video ID, --playlist ID, --dry-run\ncli.py → run_enhance_workflow()',
+        },
+        CMD_AUTH: {
+          label: 'auth\nyoutube · drive',
+          group: 'cli',
+          title: 'yt-agent auth',
+          info: 'Runs OAuth 2.0 flow for YouTube or Drive.\nDelegates to OAuthManager (auth/oauth.py).\nTokens saved to:\n~/.config/yt-agent/credentials/youtube_token.json\n~/.config/yt-agent/credentials/drive_token.json',
+        },
+        CMD_OTHER: {
+          label: 'optimize · transcribe\nschedule · playlists',
+          group: 'cli',
+          title: 'Other CLI commands',
+          info: 'optimize — Generate SEO without uploading\ntranscribe — Standalone audio transcription\nschedule — Show next publish time\nplaylists — List YouTube playlists',
+        },
 
-        PUB_WF:  { label: 'run_publish\n_workflow()', group: 'orch', title: 'run_publish_workflow()', info: 'Full publish orchestration in agent.py:\n1. Detect Drive URL → download\n2. Transcribe with word timestamps\n3. Generate chapter markers\n4. SEO optimize → build PublishPlan\n5. Show Review Loop\n6. execute_plan() on approval' },
-        ENH_WF:  { label: 'run_enhance\n_workflow()', group: 'orch', title: 'run_enhance_workflow()', info: 'Enhancement orchestration in agent.py:\n1. Fetch video(s) from YouTube\n2. SEO enhance for each video\n3. Show before/after comparison\n4. Show Review Loop\n5. Apply updates on approval' },
-        REVIEW:  { label: 'Review Loop\napprove / edit / cancel', group: 'orch', title: 'Interactive Review Loop', info: 'Shows PublishPlan or VideoEnhancement.\nUser choices: approve / edit / cancel\nFor "edit": opens inline editor for title & tags\nShared by both publish and enhance flows' },
-        EXEC:    { label: 'execute_plan()\nupdate_metadata()', group: 'orch', title: 'execute_plan() / update_metadata()', info: 'Publish: uploads video file in chunks,\nsets thumbnail, adds to playlist, schedules.\nEnhance: patches video snippet via\nYouTube videos.update() — no re-upload.' },
+        // Orchestrator layer (agent/)
+        PUB_WF: {
+          label: 'run_publish\n_workflow()',
+          group: 'orch',
+          title: 'run_publish_workflow()',
+          info: 'Full publish orchestration.\nFile: agent/orchestrator.py\n1. Detect Drive URL → download\n2. Transcribe with word timestamps\n3. Generate chapter markers\n4. SEO optimize → build PublishPlan (agent/models.py)\n5. Display via presenter.display_publish_plan()\n6. execute_plan() on approval',
+        },
+        ENH_WF: {
+          label: 'run_enhance\n_workflow()',
+          group: 'orch',
+          title: 'run_enhance_workflow()',
+          info: 'Enhancement orchestration.\nFile: agent/orchestrator.py\n1. Fetch video(s) from YouTube\n2. SEO enhance for each video\n3. Display via presenter.display_enhancement_comparison()\n4. Interactive review loop\n5. Apply updates on approval',
+        },
+        REVIEW: {
+          label: 'Review Loop\napprove / edit / cancel',
+          group: 'orch',
+          title: 'Interactive Review Loop',
+          info: 'File: agent/orchestrator.py\nDisplay is delegated to agent/presenter.py:\n  display_publish_plan()\n  display_enhancement_comparison()\n  display_enhance_plan_summary()\nUser choices: approve / edit / cancel\nFor "edit": inline editor for title & tags',
+        },
+        EXEC: {
+          label: 'execute_plan()\nupdate_metadata()',
+          group: 'orch',
+          title: 'execute_plan() / update_metadata()',
+          info: 'File: agent/orchestrator.py\nPublish: delegates to YouTubeVideoManager\n  (upload + set_thumbnail + add_to_playlist)\nEnhance: patches video snippet via\n  YouTubeTool.update_metadata() — no re-upload.',
+        },
+        AGENT_MODELS: {
+          label: 'agent/models.py\nPublishPlan · EnhancePlan',
+          group: 'orch',
+          title: 'agent/models.py — Data Models',
+          info: 'Pure data classes, no display logic.\nPublishPlan: video_source, metadata, publish_time,\n  playlist_id, thumbnail_path\nVideoEnhancement: original + enhanced metadata\nEnhancePlan: list of VideoEnhancement\nAll display is in agent/presenter.py',
+        },
 
-        OPT:    { label: 'optimize()\nnew video metadata', group: 'seo', title: 'SEOOptimizer.optimize()', info: 'Generates metadata for a new video.\nPrompt: SEO_OPTIMIZATION_PROMPT\nInput: topic + transcript + context\nOutput JSON: title, description, tags, hashtags\nLanguage: Arabic Egyptian + English tech terms' },
-        ENH_OP: { label: 'enhance()\nexisting metadata', group: 'seo', title: 'SEOOptimizer.enhance()', info: 'Improves metadata of a published video.\nPrompt: SEO_ENHANCEMENT_PROMPT\nInput: current title/description/tags + view_count\nOutput JSON: enhanced fields + changes_summary' },
-        CHAP:   { label: 'generate_chapters()\nfrom word timestamps', group: 'seo', title: 'SEOOptimizer.generate_chapters()', info: 'Generates YouTube chapter markers.\nPrompt: CHAPTER_GENERATION_PROMPT\nInput: [{word, start_time, end_time}] + duration\nOutput: [{time: "MM:SS", title: "..."}]\nOnly for videos > 60s. First chapter = 0:00' },
+        // SEO layer
+        OPT: {
+          label: 'optimize()\nnew video metadata',
+          group: 'seo',
+          title: 'SEOOptimizer.optimize()',
+          info: 'Generates metadata for a new video.\nPrompt: SEO_OPTIMIZATION_PROMPT\nInput: topic + transcript + context\nOutput JSON: title, description, tags, hashtags\nLanguage: Arabic Egyptian + English tech terms',
+        },
+        ENH_OP: {
+          label: 'enhance()\nexisting metadata',
+          group: 'seo',
+          title: 'SEOOptimizer.enhance()',
+          info: 'Improves metadata of a published video.\nPrompt: SEO_ENHANCEMENT_PROMPT\nInput: current title/description/tags + view_count\nOutput JSON: enhanced fields + changes_summary',
+        },
+        CHAP: {
+          label: 'generate_chapters()\nfrom word timestamps',
+          group: 'seo',
+          title: 'SEOOptimizer.generate_chapters()',
+          info: 'Generates YouTube chapter markers.\nPrompt: CHAPTER_GENERATION_PROMPT\nInput: [{word, start_time, end_time}] + duration\nOutput: [{time: "MM:SS", title: "..."}]\nOnly for videos > 60s. First chapter = 0:00',
+        },
 
-        YT:    { label: 'YouTubeTool\nyoutube.py', group: 'tools', title: 'YouTubeTool', info: 'YouTube Data API v3 wrapper.\nAuth: OAuth 2.0 (youtube_token.json)\nupload_video(), set_thumbnail(),\nadd_to_playlist(), update_metadata(),\nget_video_details(), list_channel_videos()\nVideo category: 28 (Science & Technology)' },
-        DRIVE: { label: 'GoogleDriveTool\ndrive.py', group: 'tools', title: 'GoogleDriveTool', info: 'Google Drive API wrapper.\nAuth: OAuth 2.0 (drive_token.json)\ndownload_video(), get_file_info()\nParses /d/FILE_ID/ and ?id=FILE_ID URLs' },
-        TRANS: { label: 'TranscriptionTool\ntranscribe.py', group: 'tools', title: 'TranscriptionTool', info: 'Google Cloud Speech-to-Text.\nAuth: GOOGLE_APPLICATION_CREDENTIALS\nShort audio (< 55s): inline recognize()\nLong audio (> 55s): GCS → long_running_recognize()\nExtracts audio via moviepy (16kHz mono WAV)' },
+        // Tools layer
+        YT: {
+          label: 'YouTubeTool\ntools/youtube/',
+          group: 'tools',
+          title: 'YouTubeTool (facade)',
+          info: 'File: tools/youtube/__init__.py\nThin facade composing four focused managers:\n  _video.py  → YouTubeVideoManager\n    upload_video, set_thumbnail,\n    update_metadata, get_video_details\n  _playlist.py → YouTubePlaylistManager\n    list_playlists, add_to_playlist,\n    list_playlist_videos\n  _channel.py → YouTubeChannelManager\n    get_channel_info, list_channel_videos\n  _models.py → VideoDetails, VideoUploadResult\nAuth: via OAuthManager (auth/oauth.py)',
+        },
+        DRIVE: {
+          label: 'GoogleDriveTool\ndrive.py',
+          group: 'tools',
+          title: 'GoogleDriveTool',
+          info: 'File: tools/drive.py\nGoogle Drive API wrapper.\nAuth: via OAuthManager (auth/oauth.py)\ndownload_video(), get_file_info()\nParses /d/FILE_ID/ and ?id=FILE_ID URLs',
+        },
+        TRANS: {
+          label: 'TranscriptionTool\ntranscribe.py',
+          group: 'tools',
+          title: 'TranscriptionTool',
+          info: 'File: tools/transcribe.py\nGoogle Cloud Speech-to-Text.\nAuth: GOOGLE_APPLICATION_CREDENTIALS\nShort audio (≤ 55s): inline recognize()\nLong audio (> 55s): GCS → long_running_recognize()\nExtracts audio via moviepy (16kHz mono WAV)\nValidates duration > 0 before transcribing',
+        },
 
-        FACTORY:    { label: 'factory.py\ncreate_llm()', group: 'llm', title: 'LLM Factory', info: 'create_llm(provider=None)\nReads default_llm_provider from settings.\nReturns ClaudeLLM or OpenAILLM.\nBoth implement BaseLLM:\n  generate() → LLMResponse\n  generate_json() → dict' },
-        CLAUDE_LLM: { label: 'ClaudeLLM\nclaude-sonnet-4', group: 'llm', title: 'ClaudeLLM', info: 'llm/claude.py\nModel: claude-sonnet-4-20250514\nUses AsyncAnthropic client\nDefault LLM provider\nRequires: ANTHROPIC_API_KEY' },
-        OPENAI_LLM: { label: 'OpenAILLM\ngpt-4o', group: 'llm', title: 'OpenAILLM', info: 'llm/openai.py\nModel: gpt-4o\nUses AsyncOpenAI client\nAlternative LLM provider\nRequires: OPENAI_API_KEY' },
+        // Auth layer
+        OAUTH_MGR: {
+          label: 'OAuthManager\nauth/oauth.py',
+          group: 'auth',
+          title: 'OAuthManager',
+          info: 'File: auth/oauth.py\nShared OAuth 2.0 credential manager.\nUsed by both YouTubeTool and GoogleDriveTool.\nReplaces ~100 lines of duplicated auth code.\n\nAPI:\n  load_credentials()       — load + auto-refresh token\n  authenticate()           — browser flow, raises AuthError\n  get_valid_credentials()  — load or authenticate\n\nconfig: service_name, scopes, token_filename, port',
+        },
 
-        CONFIG:  { label: 'config.py\nSettings + ChannelProfile', group: 'cfg', title: 'config.py', info: 'Settings from .env:\n  ANTHROPIC_API_KEY, OPENAI_API_KEY\n  GOOGLE_APPLICATION_CREDENTIALS, GCS_BUCKET\nChannelProfile → ~/.config/yt-agent/profile.yaml\n  channel_name, social_links, default_hashtags' },
-        PROMPTS: { label: 'utils/prompts.py\nSEO · Enhance · Chapters', group: 'cfg', title: 'utils/prompts.py', info: 'All LLM prompt templates:\n• SEO_OPTIMIZATION_PROMPT — new videos\n• SEO_ENHANCEMENT_PROMPT — existing videos\n• CHAPTER_GENERATION_PROMPT — timestamps\n• TRANSCRIPT_ANALYSIS_PROMPT — topics\nArabic Egyptian + English technical terms' },
-        SCHED:   { label: 'utils/scheduler.py\nSat 19:00 Cairo', group: 'cfg', title: 'utils/scheduler.py', info: 'calculate_next_publish_time()\nDefault: Saturday 19:00 Africa/Cairo\nIf target time passed today → schedules next week\nReturns timezone-aware datetime' },
+        // LLM layer
+        FACTORY: {
+          label: 'factory.py\ncreate_llm()',
+          group: 'llm',
+          title: 'LLM Factory',
+          info: 'create_llm(provider=None)\nReads default_llm_provider from settings.\nReturns ClaudeLLM or OpenAILLM.\nBoth implement BaseLLM:\n  generate() → LLMResponse\n  generate_json() → dict',
+        },
+        CLAUDE_LLM: {
+          label: 'ClaudeLLM\nclaude-sonnet-4',
+          group: 'llm',
+          title: 'ClaudeLLM',
+          info: 'File: llm/claude.py\nModel: claude-sonnet-4-20250514\nUses AsyncAnthropic client\nDefault LLM provider\nRequires: ANTHROPIC_API_KEY',
+        },
+        OPENAI_LLM: {
+          label: 'OpenAILLM\ngpt-4o',
+          group: 'llm',
+          title: 'OpenAILLM',
+          info: 'File: llm/openai.py\nModel: gpt-4o\nUses AsyncOpenAI client\nAlternative LLM provider\nRequires: OPENAI_API_KEY',
+        },
 
-        YT_API:   { label: 'YouTube\nData API v3', group: 'ext', title: 'YouTube Data API v3', info: 'OAuth scopes: youtube\nvideos.insert, videos.update, videos.list\nplaylistItems.insert, thumbnails.set\nchannels.list, playlists.list' },
-        DRIVE_API: { label: 'Google\nDrive API', group: 'ext', title: 'Google Drive API', info: 'OAuth scope: drive.readonly\nfiles.get, files.export\nDownloads video files by Drive file ID' },
-        SPEECH:   { label: 'Google Cloud\nSpeech-to-Text', group: 'ext', title: 'Google Cloud Speech-to-Text', info: 'Service account auth\nrecognize() for short audio\nlong_running_recognize() for long audio\nSupports ar-EG with word-level timestamps' },
-        GCS:      { label: 'Google Cloud\nStorage (GCS)', group: 'ext', title: 'Google Cloud Storage', info: 'Required for audio > 55 seconds.\nAudio uploaded as WAV before transcription.\nBucket: GCS_BUCKET env var.\nSame service account as Speech-to-Text.' },
-        ANTHRO:   { label: 'Anthropic\nAPI', group: 'ext', title: 'Anthropic API', info: 'Model: claude-sonnet-4-20250514\nAuth: ANTHROPIC_API_KEY\nDefault LLM for all SEO generation' },
-        OAI:      { label: 'OpenAI\nAPI', group: 'ext', title: 'OpenAI API', info: 'Model: gpt-4o\nAuth: OPENAI_API_KEY\nAlternative LLM provider' },
+        // Config / cross-cutting
+        CONFIG: {
+          label: 'config.py\nSettings + ChannelProfile',
+          group: 'cfg',
+          title: 'config.py',
+          info: 'Settings from .env (pydantic-settings):\n  ANTHROPIC_API_KEY, OPENAI_API_KEY\n  GOOGLE_APPLICATION_CREDENTIALS, GCS_BUCKET\nChannelProfile → ~/.config/yt-agent/profile.yaml\n  channel_name, social_links, default_hashtags\n\nexceptions.py — YTAgentError hierarchy:\n  AuthError, UploadError, TranscriptionError,\n  GCSError, DriveError, ConfigurationError',
+        },
+        PROMPTS: {
+          label: 'utils/prompts.py\nSEO · Enhance · Chapters',
+          group: 'cfg',
+          title: 'utils/prompts.py',
+          info: 'All LLM prompt templates:\n• SEO_OPTIMIZATION_PROMPT — new videos\n• SEO_ENHANCEMENT_PROMPT — existing videos\n• CHAPTER_GENERATION_PROMPT — timestamps\nArabic Egyptian + English technical terms\nHardcoded for "DevOps with David" channel specifics',
+        },
+        SCHED: {
+          label: 'utils/scheduler.py\nSat 19:00 Cairo',
+          group: 'cfg',
+          title: 'utils/scheduler.py',
+          info: 'calculate_next_publish_time()\nDefault: Saturday 19:00 Africa/Cairo\nIf target time passed today → schedules next week\nReturns timezone-aware datetime.\nRaises ConfigurationError on invalid HH:MM format.',
+        },
+
+        // External APIs
+        YT_API: {
+          label: 'YouTube\nData API v3',
+          group: 'ext',
+          title: 'YouTube Data API v3',
+          info: 'OAuth scopes: youtube\nvideos.insert, videos.update, videos.list\nplaylistItems.insert, thumbnails.set\nchannels.list, playlists.list',
+        },
+        DRIVE_API: {
+          label: 'Google\nDrive API',
+          group: 'ext',
+          title: 'Google Drive API',
+          info: 'OAuth scope: drive.readonly\nfiles.get, files.export\nDownloads video files by Drive file ID',
+        },
+        SPEECH: {
+          label: 'Google Cloud\nSpeech-to-Text',
+          group: 'ext',
+          title: 'Google Cloud Speech-to-Text',
+          info: 'Service account auth\nrecognize() for short audio (≤ 55s)\nlong_running_recognize() for long audio\nSupports ar-EG with word-level timestamps',
+        },
+        GCS: {
+          label: 'Google Cloud\nStorage (GCS)',
+          group: 'ext',
+          title: 'Google Cloud Storage',
+          info: 'Required for audio > 55 seconds.\nAudio uploaded as WAV before transcription.\nBucket: GCS_BUCKET env var.\nSame service account as Speech-to-Text.\nUpload timeout: 600s (10 minutes).',
+        },
+        ANTHRO: {
+          label: 'Anthropic\nAPI',
+          group: 'ext',
+          title: 'Anthropic API',
+          info: 'Model: claude-sonnet-4-20250514\nAuth: ANTHROPIC_API_KEY\nDefault LLM for all SEO generation',
+        },
+        OAI: {
+          label: 'OpenAI\nAPI',
+          group: 'ext',
+          title: 'OpenAI API',
+          info: 'Model: gpt-4o\nAuth: OPENAI_API_KEY\nAlternative LLM provider',
+        },
       };
 
       // ── All edges ─────────────────────────────────────────────────────────
       const ALL_EDGES = [
+        // CLI → workflows
         { source: 'CMD_PUBLISH', target: 'PUB_WF',    label: 'publish flow' },
         { source: 'CMD_ENHANCE', target: 'ENH_WF',    label: 'enhance flow' },
         { source: 'CMD_AUTH',    target: 'YT' },
         { source: 'CMD_AUTH',    target: 'DRIVE' },
-        { source: 'PUB_WF', target: 'DRIVE',  label: 'Drive URL?' },
-        { source: 'PUB_WF', target: 'TRANS',  label: 'transcribe' },
-        { source: 'PUB_WF', target: 'CHAP',   label: 'chapters' },
-        { source: 'PUB_WF', target: 'OPT',    label: 'optimize' },
+
+        // Publish workflow
+        { source: 'PUB_WF', target: 'DRIVE',        label: 'Drive URL?' },
+        { source: 'PUB_WF', target: 'TRANS',        label: 'transcribe' },
+        { source: 'PUB_WF', target: 'CHAP',         label: 'chapters' },
+        { source: 'PUB_WF', target: 'OPT',          label: 'optimize' },
+        { source: 'PUB_WF', target: 'AGENT_MODELS', label: 'PublishPlan' },
         { source: 'PUB_WF', target: 'REVIEW' },
-        { source: 'REVIEW', target: 'EXEC',   label: 'approved' },
-        { source: 'EXEC',   target: 'YT',     label: 'upload' },
-        { source: 'ENH_WF', target: 'YT',     label: 'fetch video(s)' },
-        { source: 'ENH_WF', target: 'ENH_OP', label: 'enhance' },
+        { source: 'REVIEW', target: 'EXEC',          label: 'approved' },
+        { source: 'EXEC',   target: 'YT',            label: 'upload' },
+
+        // Enhance workflow
+        { source: 'ENH_WF', target: 'YT',           label: 'fetch video(s)' },
+        { source: 'ENH_WF', target: 'ENH_OP',       label: 'enhance' },
+        { source: 'ENH_WF', target: 'AGENT_MODELS', label: 'EnhancePlan' },
         { source: 'ENH_WF', target: 'REVIEW' },
+
+        // SEO → LLM
         { source: 'OPT',    target: 'FACTORY' },
         { source: 'ENH_OP', target: 'FACTORY' },
         { source: 'CHAP',   target: 'FACTORY' },
         { source: 'FACTORY', target: 'CLAUDE_LLM' },
         { source: 'FACTORY', target: 'OPENAI_LLM' },
-        { source: 'YT',    target: 'YT_API' },
-        { source: 'DRIVE', target: 'DRIVE_API' },
-        { source: 'TRANS', target: 'GCS',    label: 'audio > 55s' },
-        { source: 'TRANS', target: 'SPEECH' },
+
+        // Tools → Auth → External
+        { source: 'YT',         target: 'OAUTH_MGR', label: 'credentials' },
+        { source: 'DRIVE',      target: 'OAUTH_MGR', label: 'credentials' },
+        { source: 'OAUTH_MGR',  target: 'YT_API' },
+        { source: 'OAUTH_MGR',  target: 'DRIVE_API' },
+        { source: 'YT',         target: 'YT_API' },
+        { source: 'DRIVE',      target: 'DRIVE_API' },
+        { source: 'TRANS',      target: 'GCS',    label: 'audio > 55s' },
+        { source: 'TRANS',      target: 'SPEECH' },
         { source: 'CLAUDE_LLM', target: 'ANTHRO' },
         { source: 'OPENAI_LLM', target: 'OAI' },
-        { source: 'CONFIG',  target: 'PUB_WF', label: 'settings',        dashed: true },
-        { source: 'CONFIG',  target: 'OPT',    label: 'channel profile',  dashed: true },
-        { source: 'PROMPTS', target: 'OPT',    label: 'prompts',          dashed: true },
-        { source: 'SCHED',   target: 'EXEC',   label: 'publish time',     dashed: true },
-        { source: 'CONFIG',  target: 'ENH_WF', label: 'settings',        dashed: true },
-        { source: 'CONFIG',  target: 'ENH_OP', label: 'channel profile',  dashed: true },
-        { source: 'PROMPTS', target: 'ENH_OP', label: 'prompts',          dashed: true },
+
+        // Config / cross-cutting (dashed)
+        { source: 'CONFIG',  target: 'PUB_WF',      label: 'settings',       dashed: true },
+        { source: 'CONFIG',  target: 'OPT',          label: 'channel profile', dashed: true },
+        { source: 'PROMPTS', target: 'OPT',          label: 'prompts',         dashed: true },
+        { source: 'SCHED',   target: 'EXEC',         label: 'publish time',    dashed: true },
+        { source: 'CONFIG',  target: 'ENH_WF',       label: 'settings',        dashed: true },
+        { source: 'CONFIG',  target: 'ENH_OP',       label: 'channel profile', dashed: true },
+        { source: 'PROMPTS', target: 'ENH_OP',       label: 'prompts',         dashed: true },
       ];
 
       // ── Views: which nodes to show ────────────────────────────────────────
@@ -320,26 +489,26 @@
         },
         publish: {
           label: 'publish flow',
-          nodes: ['CMD_PUBLISH', 'PUB_WF', 'REVIEW', 'EXEC',
+          nodes: ['CMD_PUBLISH', 'PUB_WF', 'REVIEW', 'EXEC', 'AGENT_MODELS',
                   'DRIVE', 'TRANS', 'OPT', 'CHAP',
                   'FACTORY', 'CLAUDE_LLM', 'OPENAI_LLM',
-                  'YT', 'CONFIG', 'PROMPTS', 'SCHED',
+                  'YT', 'OAUTH_MGR', 'CONFIG', 'PROMPTS', 'SCHED',
                   'YT_API', 'DRIVE_API', 'SPEECH', 'GCS', 'ANTHRO', 'OAI'],
         },
         enhance: {
           label: 'enhance flow',
-          nodes: ['CMD_ENHANCE', 'ENH_WF', 'REVIEW', 'EXEC',
+          nodes: ['CMD_ENHANCE', 'ENH_WF', 'REVIEW', 'EXEC', 'AGENT_MODELS',
                   'ENH_OP', 'FACTORY', 'CLAUDE_LLM', 'OPENAI_LLM',
-                  'YT', 'CONFIG', 'PROMPTS',
+                  'YT', 'OAUTH_MGR', 'CONFIG', 'PROMPTS',
                   'YT_API', 'ANTHRO', 'OAI'],
         },
         auth: {
           label: 'auth flow',
-          nodes: ['CMD_AUTH', 'YT', 'DRIVE', 'CONFIG', 'YT_API', 'DRIVE_API'],
+          nodes: ['CMD_AUTH', 'YT', 'DRIVE', 'OAUTH_MGR', 'CONFIG', 'YT_API', 'DRIVE_API'],
         },
         infra: {
           label: 'Infrastructure',
-          nodes: ['YT', 'DRIVE', 'TRANS',
+          nodes: ['YT', 'DRIVE', 'TRANS', 'OAUTH_MGR',
                   'FACTORY', 'CLAUDE_LLM', 'OPENAI_LLM',
                   'CONFIG', 'PROMPTS', 'SCHED',
                   'YT_API', 'DRIVE_API', 'SPEECH', 'GCS', 'ANTHRO', 'OAI'],
@@ -353,6 +522,7 @@
         seo:   { bg: '#451a03', border: '#f59e0b', text: '#fcd34d' },
         llm:   { bg: '#3b2103', border: '#f97316', text: '#fdba74' },
         tools: { bg: '#042f2e', border: '#14b8a6', text: '#5eead4' },
+        auth:  { bg: '#052e16', border: '#10b981', text: '#6ee7b7' },
         cfg:   { bg: '#1c2333', border: '#475569', text: '#94a3b8' },
         ext:   { bg: '#111827', border: '#374151', text: '#6b7280' },
       };
@@ -474,7 +644,7 @@
         tooltip.innerHTML = `<strong>${d.title}</strong>${d.info}`;
         tooltip.style.display = 'block';
         const rp = e.renderedPosition;
-        tooltip.style.left = Math.min(rp.x + 16, window.innerWidth  - 300) + 'px';
+        tooltip.style.left = Math.min(rp.x + 16, window.innerWidth  - 320) + 'px';
         tooltip.style.top  = Math.max(rp.y - 20, 60)                        + 'px';
       });
 

@@ -4,15 +4,14 @@ import re
 import tempfile
 from pathlib import Path
 
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 from rich.console import Console
 from rich.progress import BarColumn, DownloadColumn, Progress, SpinnerColumn, TextColumn
 
+from ..auth import OAuthManager
 from ..config import get_credentials_dir
+from ..exceptions import AuthError
 from .base import BaseTool, ToolResult
 
 console = Console()
@@ -59,7 +58,12 @@ class GoogleDriveTool(BaseTool):
 
     def __init__(self):
         self._service = None
-        self._credentials = None
+        self._oauth = OAuthManager(
+            service_name="Google Drive",
+            scopes=SCOPES,
+            token_filename="drive_token.json",
+            port=8081,
+        )
 
     @property
     def name(self) -> str:
@@ -71,88 +75,26 @@ class GoogleDriveTool(BaseTool):
 
     def is_available(self) -> bool:
         """Check if Drive credentials are configured."""
-        creds_dir = get_credentials_dir()
-        client_secrets = creds_dir / "client_secrets.json"
-        return client_secrets.exists()
-
-    def _get_credentials_path(self) -> Path:
-        """Get path to stored OAuth token."""
-        return get_credentials_dir() / "drive_token.json"
-
-    def _get_client_secrets_path(self) -> Path:
-        """Get path to client secrets file."""
-        return get_credentials_dir() / "client_secrets.json"
-
-    def _load_credentials(self) -> Credentials | None:
-        """Load credentials from stored token file."""
-        token_path = self._get_credentials_path()
-
-        if not token_path.exists():
-            return None
-
-        creds = Credentials.from_authorized_user_file(str(token_path), SCOPES)
-
-        # Refresh if expired
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-            self._save_credentials(creds)
-
-        return creds
-
-    def _save_credentials(self, creds: Credentials) -> None:
-        """Save credentials to token file."""
-        token_path = self._get_credentials_path()
-        with open(token_path, "w") as f:
-            f.write(creds.to_json())
+        return (get_credentials_dir() / "client_secrets.json").exists()
 
     def authenticate(self) -> bool:
         """Run OAuth flow to authenticate with Google Drive.
 
         Returns:
-            True if authentication successful.
+            True if authentication succeeded.
         """
-        client_secrets = self._get_client_secrets_path()
-
-        if not client_secrets.exists():
-            console.print(
-                "[bold red]Error:[/bold red] client_secrets.json not found.\n"
-                f"Please download it from Google Cloud Console and save to:\n"
-                f"  {client_secrets}"
-            )
-            return False
-
         try:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                str(client_secrets),
-                SCOPES,
-            )
-
-            console.print("[bold]Opening browser for Google Drive authentication...[/bold]")
-            creds = flow.run_local_server(port=8081)
-
-            self._save_credentials(creds)
-            self._credentials = creds
-            console.print("[bold green]Google Drive authentication successful![/bold green]")
+            self._oauth.authenticate()
             return True
-
-        except Exception as e:
+        except AuthError as e:
             console.print(f"[bold red]Authentication failed:[/bold red] {e}")
             return False
 
     def _get_service(self):
-        """Get authenticated Drive API service."""
+        """Get authenticated Drive API service (cached)."""
         if self._service:
             return self._service
-
-        # Try to load existing credentials
-        creds = self._load_credentials()
-
-        if not creds or not creds.valid:
-            # Need to authenticate
-            if not self.authenticate():
-                raise RuntimeError("Google Drive authentication required")
-            creds = self._credentials
-
+        creds = self._oauth.get_valid_credentials()
         self._service = build("drive", "v3", credentials=creds)
         return self._service
 

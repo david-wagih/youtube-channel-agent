@@ -1,1 +1,1 @@
-yt-agent publish ./episode-9.mov --thumbnail ./episode-9-thumbnail.jpg --playlist PLUi3cHr0V4sF8if85YS7z-w9P6y1W-HXm 
+yt-agent publish ./episode-10.mov --thumbnail ./episode-10-thumbnail.jpg --playlist PLUi3cHr0V4sF8if85YS7z-w9P6y1W-HXm 
