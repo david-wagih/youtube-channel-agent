@@ -66,14 +66,11 @@ class YouTubePlaylistManager:
                 .execute()
             )
             video_ids = [
-                item["snippet"]["resourceId"]["videoId"]
-                for item in response.get("items", [])
+                item["snippet"]["resourceId"]["videoId"] for item in response.get("items", [])
             ]
             if video_ids:
                 videos_response = (
-                    self._service.videos()
-                    .list(part=_VIDEO_PARTS, id=",".join(video_ids))
-                    .execute()
+                    self._service.videos().list(part=_VIDEO_PARTS, id=",".join(video_ids)).execute()
                 )
                 for item in videos_response.get("items", []):
                     videos.append(_parse_video_response(item))

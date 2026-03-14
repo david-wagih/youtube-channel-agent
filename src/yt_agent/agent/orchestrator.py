@@ -106,9 +106,7 @@ class YouTubeAgent:
         """Interactive editor for title and tags."""
         console.print("\n[bold]Edit mode:[/bold] (press Enter to keep current value)")
         plan.metadata.title = Prompt.ask("Title", default=plan.metadata.title)
-        new_tags_str = Prompt.ask(
-            "Tags (comma-separated)", default=", ".join(plan.metadata.tags)
-        )
+        new_tags_str = Prompt.ask("Tags (comma-separated)", default=", ".join(plan.metadata.tags))
         plan.metadata.tags = [t.strip() for t in new_tags_str.split(",")]
         return plan
 
@@ -176,9 +174,7 @@ class YouTubeAgent:
             transcript, chapters = await self._run_transcription(video_path)
 
         if not topic and not transcript:
-            topic = Prompt.ask(
-                "\n[bold]Describe your video topic[/bold] (for SEO optimization)"
-            )
+            topic = Prompt.ask("\n[bold]Describe your video topic[/bold] (for SEO optimization)")
 
         plan = await self.process_video(
             source=video_path,
@@ -412,16 +408,13 @@ class YouTubeAgent:
                     description=enhancement.enhanced_metadata.description,
                     tags=enhancement.enhanced_metadata.tags,
                 )
-                console.print(
-                    f"  [green]✓[/green] {enhancement.enhanced_metadata.title[:50]}"
-                )
+                console.print(f"  [green]✓[/green] {enhancement.enhanced_metadata.title[:50]}")
                 success_count += 1
             except Exception as e:
                 console.print(f"  [red]✗[/red] {enhancement.original_title[:50]}: {e}")
 
         console.print(
-            f"\n[bold green]Applied {success_count}/{len(enhancements)} enhancements."
-            "[/bold green]"
+            f"\n[bold green]Applied {success_count}/{len(enhancements)} enhancements.[/bold green]"
         )
         return success_count > 0
 

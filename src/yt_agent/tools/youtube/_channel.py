@@ -16,11 +16,7 @@ class YouTubeChannelManager:
 
     def get_channel_info(self) -> dict[str, Any]:
         """Return basic info about the authenticated channel."""
-        response = (
-            self._service.channels()
-            .list(part="snippet,statistics", mine=True)
-            .execute()
-        )
+        response = self._service.channels().list(part="snippet,statistics", mine=True).execute()
         if not response.get("items"):
             return {}
 
@@ -35,17 +31,11 @@ class YouTubeChannelManager:
 
     def list_channel_videos(self, max_results: int = 50) -> list[VideoDetails]:
         """Return recent videos from the authenticated channel (newest first)."""
-        channel_response = (
-            self._service.channels()
-            .list(part="contentDetails", mine=True)
-            .execute()
-        )
+        channel_response = self._service.channels().list(part="contentDetails", mine=True).execute()
         if not channel_response.get("items"):
             return []
 
-        uploads_id = channel_response["items"][0]["contentDetails"]["relatedPlaylists"][
-            "uploads"
-        ]
+        uploads_id = channel_response["items"][0]["contentDetails"]["relatedPlaylists"]["uploads"]
 
         videos: list[VideoDetails] = []
         page_token = None
@@ -62,14 +52,11 @@ class YouTubeChannelManager:
                 .execute()
             )
             video_ids = [
-                item["snippet"]["resourceId"]["videoId"]
-                for item in response.get("items", [])
+                item["snippet"]["resourceId"]["videoId"] for item in response.get("items", [])
             ]
             if video_ids:
                 videos_response = (
-                    self._service.videos()
-                    .list(part=_VIDEO_PARTS, id=",".join(video_ids))
-                    .execute()
+                    self._service.videos().list(part=_VIDEO_PARTS, id=",".join(video_ids)).execute()
                 )
                 for item in videos_response.get("items", []):
                     videos.append(_parse_video_response(item))

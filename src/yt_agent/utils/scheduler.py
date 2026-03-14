@@ -50,9 +50,7 @@ def calculate_next_publish_time(
             f"Invalid time format: '{target_time}'. Expected HH:MM (e.g. '19:00')."
         )
     if not (0 <= hour <= 23 and 0 <= minute <= 59):
-        raise ConfigurationError(
-            f"Time out of range: '{target_time}'. Hour 0-23, minute 0-59."
-        )
+        raise ConfigurationError(f"Time out of range: '{target_time}'. Hour 0-23, minute 0-59.")
 
     # Get target weekday
     target_weekday = WEEKDAY_MAP.get(target_day)

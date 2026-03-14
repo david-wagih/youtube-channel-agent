@@ -32,9 +32,7 @@ def display_publish_plan(plan: PublishPlan) -> None:
     console.print(Panel(plan.metadata.description, title="Description", expand=False))
 
     if plan.metadata.chapters:
-        chapters_text = "\n".join(
-            f"  {ch.time} - {ch.title}" for ch in plan.metadata.chapters
-        )
+        chapters_text = "\n".join(f"  {ch.time} - {ch.title}" for ch in plan.metadata.chapters)
         console.print(
             Panel(chapters_text, title=f"Chapters ({len(plan.metadata.chapters)})", style="cyan")
         )

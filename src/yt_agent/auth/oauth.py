@@ -102,17 +102,13 @@ class OAuthManager:
                 str(self.client_secrets_path),
                 self.scopes,
             )
-            console.print(
-                f"[bold]Opening browser for {self.service_name} authentication...[/bold]"
-            )
+            console.print(f"[bold]Opening browser for {self.service_name} authentication...[/bold]")
             creds = flow.run_local_server(port=self.port)
         except Exception as e:
             raise AuthError(f"{self.service_name} authentication failed: {e}") from e
 
         self._save_credentials(creds)
-        console.print(
-            f"[bold green]{self.service_name} authentication successful![/bold green]"
-        )
+        console.print(f"[bold green]{self.service_name} authentication successful![/bold green]")
         return creds
 
     def get_valid_credentials(self) -> Credentials:

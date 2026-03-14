@@ -23,9 +23,7 @@ def _parse_video_response(item: dict[str, Any]) -> VideoDetails:
     published_at = None
     if snippet.get("publishedAt"):
         try:
-            published_at = datetime.fromisoformat(
-                snippet["publishedAt"].replace("Z", "+00:00")
-            )
+            published_at = datetime.fromisoformat(snippet["publishedAt"].replace("Z", "+00:00"))
         except (ValueError, TypeError):
             pass
 
@@ -129,9 +127,7 @@ class YouTubeVideoManager:
 
         media = MediaFileUpload(str(thumbnail_path), mimetype="image/jpeg")
         try:
-            self._service.thumbnails().set(
-                videoId=video_id, media_body=media
-            ).execute()
+            self._service.thumbnails().set(videoId=video_id, media_body=media).execute()
             console.print("[green]Thumbnail uploaded.[/green]")
             return True
         except Exception as e:
@@ -146,11 +142,7 @@ class YouTubeVideoManager:
         tags: list[str] | None = None,
     ) -> bool:
         """Update snippet fields for an existing video. Returns True on success."""
-        video = (
-            self._service.videos()
-            .list(part="snippet", id=video_id)
-            .execute()
-        )
+        video = self._service.videos().list(part="snippet", id=video_id).execute()
 
         if not video.get("items"):
             raise ValueError(f"Video not found: {video_id}")
@@ -183,18 +175,12 @@ class YouTubeVideoManager:
             .update(part="snippet", body={"id": video_id, "snippet": snippet})
             .execute()
         )
-        console.print(
-            f"[dim]Updated: {response.get('snippet', {}).get('title', video_id)}[/dim]"
-        )
+        console.print(f"[dim]Updated: {response.get('snippet', {}).get('title', video_id)}[/dim]")
         return True
 
     def get_video_details(self, video_id: str) -> VideoDetails:
         """Fetch full details for a single video by ID."""
-        response = (
-            self._service.videos()
-            .list(part=_VIDEO_PARTS, id=video_id)
-            .execute()
-        )
+        response = self._service.videos().list(part=_VIDEO_PARTS, id=video_id).execute()
         if not response.get("items"):
             raise ValueError(f"Video not found: {video_id}")
         return _parse_video_response(response["items"][0])

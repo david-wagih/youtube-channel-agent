@@ -46,9 +46,9 @@ class VideoMetadata:
 Description:
 {self.description}
 {chapters_str}
-Tags: {', '.join(self.tags)}
+Tags: {", ".join(self.tags)}
 
-Hashtags: {' '.join(self.hashtags)}"""
+Hashtags: {" ".join(self.hashtags)}"""
 
 
 class SEOOptimizer:

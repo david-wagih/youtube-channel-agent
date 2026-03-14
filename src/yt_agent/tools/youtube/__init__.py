@@ -119,9 +119,7 @@ class YouTubeTool(BaseTool):
         return result
 
     def set_thumbnail(self, video_id: str, thumbnail_path: str | Path) -> bool:
-        return YouTubeVideoManager(self._get_service()).set_thumbnail(
-            video_id, thumbnail_path
-        )
+        return YouTubeVideoManager(self._get_service()).set_thumbnail(video_id, thumbnail_path)
 
     def update_metadata(
         self,
@@ -145,14 +143,10 @@ class YouTubeTool(BaseTool):
         return YouTubePlaylistManager(self._get_service()).list_playlists()
 
     def list_playlist_videos(self, playlist_id: str) -> list[VideoDetails]:
-        return YouTubePlaylistManager(self._get_service()).list_playlist_videos(
-            playlist_id
-        )
+        return YouTubePlaylistManager(self._get_service()).list_playlist_videos(playlist_id)
 
     def add_to_playlist(self, video_id: str, playlist_id: str) -> bool:
-        return YouTubePlaylistManager(self._get_service()).add_to_playlist(
-            video_id, playlist_id
-        )
+        return YouTubePlaylistManager(self._get_service()).add_to_playlist(video_id, playlist_id)
 
     # ------------------------------------------------------------------
     # Channel operations (delegated to YouTubeChannelManager)
@@ -162,9 +156,7 @@ class YouTubeTool(BaseTool):
         return YouTubeChannelManager(self._get_service()).get_channel_info()
 
     def list_channel_videos(self, max_results: int = 50) -> list[VideoDetails]:
-        return YouTubeChannelManager(self._get_service()).list_channel_videos(
-            max_results
-        )
+        return YouTubeChannelManager(self._get_service()).list_channel_videos(max_results)
 
     # ------------------------------------------------------------------
     # Internal execute() wrappers
