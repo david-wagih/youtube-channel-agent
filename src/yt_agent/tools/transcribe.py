@@ -93,7 +93,7 @@ class TranscriptionTool(BaseTool):
             # Non-critical, just log
             console.print("[dim]Warning: Could not clean up GCS file[/dim]")
 
-    async def execute(self, **kwargs) -> ToolResult:
+    def execute(self, **kwargs) -> ToolResult:
         """Execute transcription.
 
         Args:
@@ -101,7 +101,7 @@ class TranscriptionTool(BaseTool):
             language: Language code (default: en-US).
         """
         try:
-            transcript = await self.transcribe_video(
+            transcript = self.transcribe_video(
                 video_path=kwargs["video_path"],
                 language=kwargs.get("language", "en-US"),
             )
@@ -141,7 +141,7 @@ class TranscriptionTool(BaseTool):
 
         return audio_path
 
-    async def transcribe_video(
+    def transcribe_video(
         self,
         video_path: str | Path,
         language: str = "en-US",
@@ -239,7 +239,7 @@ class TranscriptionTool(BaseTool):
 
         return transcript
 
-    async def transcribe_with_timestamps(
+    def transcribe_with_timestamps(
         self,
         video_path: str | Path,
         language: str = "en-US",

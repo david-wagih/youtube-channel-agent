@@ -98,7 +98,7 @@ class GoogleDriveTool(BaseTool):
         self._service = build("drive", "v3", credentials=creds)
         return self._service
 
-    async def execute(self, **kwargs) -> ToolResult:
+    def execute(self, **kwargs) -> ToolResult:
         """Execute a Drive operation.
 
         Supported operations:
@@ -108,16 +108,16 @@ class GoogleDriveTool(BaseTool):
         operation = kwargs.get("operation", "download")
 
         if operation == "download":
-            return await self._download(**kwargs)
+            return self._download(**kwargs)
         elif operation == "info":
-            return await self._get_info(**kwargs)
+            return self._get_info(**kwargs)
         else:
             return ToolResult(
                 success=False,
                 error=f"Unknown operation: {operation}",
             )
 
-    async def download_video(
+    def download_video(
         self,
         url_or_id: str,
         output_dir: str | Path | None = None,
@@ -186,7 +186,7 @@ class GoogleDriveTool(BaseTool):
         console.print(f"[green]Downloaded to:[/green] {output_path}")
         return output_path
 
-    async def get_file_info(self, url_or_id: str) -> dict:
+    def get_file_info(self, url_or_id: str) -> dict:
         """Get information about a file.
 
         Args:
@@ -216,10 +216,10 @@ class GoogleDriveTool(BaseTool):
             "modified": metadata.get("modifiedTime"),
         }
 
-    async def _download(self, **kwargs) -> ToolResult:
+    def _download(self, **kwargs) -> ToolResult:
         """Internal download wrapper."""
         try:
-            path = await self.download_video(
+            path = self.download_video(
                 url_or_id=kwargs["url"],
                 output_dir=kwargs.get("output_dir"),
             )
@@ -227,10 +227,10 @@ class GoogleDriveTool(BaseTool):
         except Exception as e:
             return ToolResult(success=False, error=str(e))
 
-    async def _get_info(self, **kwargs) -> ToolResult:
+    def _get_info(self, **kwargs) -> ToolResult:
         """Internal info wrapper."""
         try:
-            info = await self.get_file_info(kwargs["url"])
+            info = self.get_file_info(kwargs["url"])
             return ToolResult(success=True, data=info)
         except Exception as e:
             return ToolResult(success=False, error=str(e))

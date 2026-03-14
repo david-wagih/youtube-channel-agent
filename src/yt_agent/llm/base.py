@@ -23,7 +23,7 @@ class BaseLLM(ABC):
         ...
 
     @abstractmethod
-    async def generate(
+    def generate(
         self,
         prompt: str,
         system: str | None = None,

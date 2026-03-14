@@ -112,7 +112,7 @@ class YouTubeAgent:
         plan.metadata.tags = [t.strip() for t in new_tags_str.split(",")]
         return plan
 
-    async def execute_plan(self, plan: PublishPlan) -> bool:
+    def execute_plan(self, plan: PublishPlan) -> bool:
         """Upload and schedule the video. Returns True on success."""
         from ..tools.youtube import YouTubeTool
 
@@ -124,7 +124,7 @@ class YouTubeAgent:
 
         try:
             console.print("\n[bold]Uploading to YouTube...[/bold]")
-            result = await youtube.upload_video(
+            result = youtube.upload_video(
                 video_path=plan.video_source,
                 title=plan.metadata.title,
                 description=plan.metadata.description,
@@ -167,7 +167,7 @@ class YouTubeAgent:
         if self._is_drive_url(source):
             console.print("\n[bold]Detected Google Drive URL[/bold]")
             try:
-                video_path = str(await self._download_from_drive(source))
+                video_path = str(self._download_from_drive(source))
             except Exception as e:
                 console.print(f"[bold red]Failed to download from Drive:[/bold red] {e}")
                 return False
@@ -192,7 +192,7 @@ class YouTubeAgent:
         while True:
             decision = self.review_plan(plan)
             if decision == "approve":
-                return await self.execute_plan(plan)
+                return self.execute_plan(plan)
             if decision == "edit":
                 plan = self.edit_plan(plan)
             else:
@@ -215,7 +215,7 @@ class YouTubeAgent:
 
         try:
             console.print("\n[bold]Transcribing video with timestamps...[/bold]")
-            words = await transcriber.transcribe_with_timestamps(video_path, language="ar-EG")
+            words = transcriber.transcribe_with_timestamps(video_path, language="ar-EG")
             transcript = " ".join(w["word"] for w in words)
             video_duration = words[-1]["end_time"] if words else 0.0
 
@@ -256,7 +256,7 @@ class YouTubeAgent:
             console.print("Run [cyan]yt-agent auth youtube[/cyan] first.")
             return False
 
-        videos: list[VideoDetails] = await self._fetch_videos(
+        videos: list[VideoDetails] = self._fetch_videos(
             youtube, video_id, playlist_id, recent_count
         )
         if videos is None:
@@ -287,27 +287,27 @@ class YouTubeAgent:
             console.print("\n[yellow]Dry run mode - no changes applied.[/yellow]")
             return True
 
-        approved = await self._get_enhancement_approval(enhancements)
+        approved = self._get_enhancement_approval(enhancements)
         if approved is None:
             return False
 
-        return await self._apply_enhancements(youtube, approved)
+        return self._apply_enhancements(youtube, approved)
 
-    async def _fetch_videos(self, youtube, video_id, playlist_id, recent_count):
+    def _fetch_videos(self, youtube, video_id, playlist_id, recent_count):
         """Fetch the list of videos to enhance. Returns None on error."""
 
         try:
             if video_id:
                 console.print("\n[bold]Fetching video details...[/bold]")
-                return [await youtube.get_video_details(video_id)]
+                return [youtube.get_video_details(video_id)]
             if playlist_id:
                 console.print("\n[bold]Fetching playlist videos...[/bold]")
-                videos = await youtube.list_playlist_videos(playlist_id)
+                videos = youtube.list_playlist_videos(playlist_id)
                 console.print(f"Found {len(videos)} videos in playlist")
                 return videos
             if recent_count:
                 console.print("\n[bold]Fetching recent channel videos...[/bold]")
-                videos = await youtube.list_channel_videos(max_results=recent_count)
+                videos = youtube.list_channel_videos(max_results=recent_count)
                 console.print(f"Found {len(videos)} videos")
                 return videos
             console.print("[bold red]Error:[/bold red] Specify --video, --playlist, or --recent")
@@ -347,15 +347,15 @@ class YouTubeAgent:
 
         return enhancements
 
-    async def _get_enhancement_approval(
+    def _get_enhancement_approval(
         self, enhancements: list[VideoEnhancement]
     ) -> list[VideoEnhancement] | None:
         """Prompt the user to approve/edit/cancel. Returns approved list or None."""
         if len(enhancements) == 1:
-            return await self._approve_single_enhancement(enhancements)
-        return await self._approve_bulk_enhancements(enhancements)
+            return self._approve_single_enhancement(enhancements)
+        return self._approve_bulk_enhancements(enhancements)
 
-    async def _approve_single_enhancement(
+    def _approve_single_enhancement(
         self, enhancements: list[VideoEnhancement]
     ) -> list[VideoEnhancement] | None:
         choice = Prompt.ask(
@@ -374,7 +374,7 @@ class YouTubeAgent:
                 return None
         return enhancements
 
-    async def _approve_bulk_enhancements(
+    def _approve_bulk_enhancements(
         self, enhancements: list[VideoEnhancement]
     ) -> list[VideoEnhancement] | None:
         choice = Prompt.ask(
@@ -400,13 +400,13 @@ class YouTubeAgent:
             return approved
         return enhancements
 
-    async def _apply_enhancements(self, youtube, enhancements: list[VideoEnhancement]) -> bool:
+    def _apply_enhancements(self, youtube, enhancements: list[VideoEnhancement]) -> bool:
         """Push metadata updates to YouTube. Returns True if at least one succeeded."""
         console.print(f"\n[bold]Applying {len(enhancements)} enhancement(s)...[/bold]")
         success_count = 0
         for enhancement in enhancements:
             try:
-                await youtube.update_metadata(
+                youtube.update_metadata(
                     video_id=enhancement.video_id,
                     title=enhancement.enhanced_metadata.title,
                     description=enhancement.enhanced_metadata.description,
@@ -483,10 +483,10 @@ class YouTubeAgent:
     def _is_drive_url(source: str) -> bool:
         return source.startswith("http") and "drive.google.com" in source
 
-    async def _download_from_drive(self, url: str) -> Path:
+    def _download_from_drive(self, url: str) -> Path:
         from ..tools.drive import GoogleDriveTool
 
         drive = GoogleDriveTool()
         if not drive.is_available():
             raise DriveError("Google Drive not configured. Run 'yt-agent auth drive' first.")
-        return await drive.download_video(url)
+        return drive.download_video(url)

@@ -56,12 +56,12 @@ class YouTubeTool(BaseTool):
     def is_available(self) -> bool:
         return (get_credentials_dir() / "client_secrets.json").exists()
 
-    async def execute(self, **kwargs) -> ToolResult:
+    def execute(self, **kwargs) -> ToolResult:
         operation = kwargs.get("operation")
         if operation == "upload":
-            return await self._upload_video(**kwargs)
+            return self._upload_video(**kwargs)
         if operation == "update_metadata":
-            return await self._update_metadata(**kwargs)
+            return self._update_metadata(**kwargs)
         return ToolResult(success=False, error=f"Unknown operation: {operation}")
 
     # ------------------------------------------------------------------
@@ -88,7 +88,7 @@ class YouTubeTool(BaseTool):
     # Video operations (delegated to YouTubeVideoManager)
     # ------------------------------------------------------------------
 
-    async def upload_video(
+    def upload_video(
         self,
         video_path: str | Path,
         title: str,
@@ -101,7 +101,7 @@ class YouTubeTool(BaseTool):
         notify_subscribers: bool = True,
     ) -> VideoUploadResult:
         mgr = YouTubeVideoManager(self._get_service())
-        result = await mgr.upload_video(
+        result = mgr.upload_video(
             video_path=video_path,
             title=title,
             description=description,
@@ -111,46 +111,46 @@ class YouTubeTool(BaseTool):
             notify_subscribers=notify_subscribers,
         )
         if thumbnail_path:
-            await mgr.set_thumbnail(result.video_id, thumbnail_path)
+            mgr.set_thumbnail(result.video_id, thumbnail_path)
         if playlist_id:
-            await YouTubePlaylistManager(self._get_service()).add_to_playlist(
+            YouTubePlaylistManager(self._get_service()).add_to_playlist(
                 result.video_id, playlist_id
             )
         return result
 
-    async def set_thumbnail(self, video_id: str, thumbnail_path: str | Path) -> bool:
-        return await YouTubeVideoManager(self._get_service()).set_thumbnail(
+    def set_thumbnail(self, video_id: str, thumbnail_path: str | Path) -> bool:
+        return YouTubeVideoManager(self._get_service()).set_thumbnail(
             video_id, thumbnail_path
         )
 
-    async def update_metadata(
+    def update_metadata(
         self,
         video_id: str,
         title: str | None = None,
         description: str | None = None,
         tags: list[str] | None = None,
     ) -> bool:
-        return await YouTubeVideoManager(self._get_service()).update_metadata(
+        return YouTubeVideoManager(self._get_service()).update_metadata(
             video_id=video_id, title=title, description=description, tags=tags
         )
 
-    async def get_video_details(self, video_id: str) -> VideoDetails:
-        return await YouTubeVideoManager(self._get_service()).get_video_details(video_id)
+    def get_video_details(self, video_id: str) -> VideoDetails:
+        return YouTubeVideoManager(self._get_service()).get_video_details(video_id)
 
     # ------------------------------------------------------------------
     # Playlist operations (delegated to YouTubePlaylistManager)
     # ------------------------------------------------------------------
 
-    async def list_playlists(self) -> list[dict]:
-        return await YouTubePlaylistManager(self._get_service()).list_playlists()
+    def list_playlists(self) -> list[dict]:
+        return YouTubePlaylistManager(self._get_service()).list_playlists()
 
-    async def list_playlist_videos(self, playlist_id: str) -> list[VideoDetails]:
-        return await YouTubePlaylistManager(self._get_service()).list_playlist_videos(
+    def list_playlist_videos(self, playlist_id: str) -> list[VideoDetails]:
+        return YouTubePlaylistManager(self._get_service()).list_playlist_videos(
             playlist_id
         )
 
-    async def add_to_playlist(self, video_id: str, playlist_id: str) -> bool:
-        return await YouTubePlaylistManager(self._get_service()).add_to_playlist(
+    def add_to_playlist(self, video_id: str, playlist_id: str) -> bool:
+        return YouTubePlaylistManager(self._get_service()).add_to_playlist(
             video_id, playlist_id
         )
 
@@ -158,11 +158,11 @@ class YouTubeTool(BaseTool):
     # Channel operations (delegated to YouTubeChannelManager)
     # ------------------------------------------------------------------
 
-    async def get_channel_info(self) -> dict:
-        return await YouTubeChannelManager(self._get_service()).get_channel_info()
+    def get_channel_info(self) -> dict:
+        return YouTubeChannelManager(self._get_service()).get_channel_info()
 
-    async def list_channel_videos(self, max_results: int = 50) -> list[VideoDetails]:
-        return await YouTubeChannelManager(self._get_service()).list_channel_videos(
+    def list_channel_videos(self, max_results: int = 50) -> list[VideoDetails]:
+        return YouTubeChannelManager(self._get_service()).list_channel_videos(
             max_results
         )
 
@@ -170,9 +170,9 @@ class YouTubeTool(BaseTool):
     # Internal execute() wrappers
     # ------------------------------------------------------------------
 
-    async def _upload_video(self, **kwargs) -> ToolResult:
+    def _upload_video(self, **kwargs) -> ToolResult:
         try:
-            result = await self.upload_video(
+            result = self.upload_video(
                 video_path=kwargs["video_path"],
                 title=kwargs["title"],
                 description=kwargs["description"],
@@ -184,9 +184,9 @@ class YouTubeTool(BaseTool):
         except Exception as e:
             return ToolResult(success=False, error=str(e))
 
-    async def _update_metadata(self, **kwargs) -> ToolResult:
+    def _update_metadata(self, **kwargs) -> ToolResult:
         try:
-            success = await self.update_metadata(
+            success = self.update_metadata(
                 video_id=kwargs["video_id"],
                 title=kwargs.get("title"),
                 description=kwargs.get("description"),

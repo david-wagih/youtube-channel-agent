@@ -14,7 +14,7 @@ class YouTubeChannelManager:
     def __init__(self, service: Any) -> None:
         self._service = service
 
-    async def get_channel_info(self) -> dict[str, Any]:
+    def get_channel_info(self) -> dict[str, Any]:
         """Return basic info about the authenticated channel."""
         response = (
             self._service.channels()
@@ -33,7 +33,7 @@ class YouTubeChannelManager:
             "video_count": channel["statistics"].get("videoCount", "0"),
         }
 
-    async def list_channel_videos(self, max_results: int = 50) -> list[VideoDetails]:
+    def list_channel_videos(self, max_results: int = 50) -> list[VideoDetails]:
         """Return recent videos from the authenticated channel (newest first)."""
         channel_response = (
             self._service.channels()

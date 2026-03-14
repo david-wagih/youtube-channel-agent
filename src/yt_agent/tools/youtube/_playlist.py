@@ -18,7 +18,7 @@ class YouTubePlaylistManager:
     def __init__(self, service: Any) -> None:
         self._service = service
 
-    async def list_playlists(self) -> list[dict[str, Any]]:
+    def list_playlists(self) -> list[dict[str, Any]]:
         """Return all playlists for the authenticated channel."""
         playlists: list[dict[str, Any]] = []
         page_token = None
@@ -49,7 +49,7 @@ class YouTubePlaylistManager:
 
         return playlists
 
-    async def list_playlist_videos(self, playlist_id: str) -> list[VideoDetails]:
+    def list_playlist_videos(self, playlist_id: str) -> list[VideoDetails]:
         """Return all videos in a playlist with full snippet and statistics."""
         videos: list[VideoDetails] = []
         page_token = None
@@ -84,7 +84,7 @@ class YouTubePlaylistManager:
 
         return videos
 
-    async def add_to_playlist(self, video_id: str, playlist_id: str) -> bool:
+    def add_to_playlist(self, video_id: str, playlist_id: str) -> bool:
         """Add a video to a playlist. Returns True on success."""
         try:
             self._service.playlistItems().insert(

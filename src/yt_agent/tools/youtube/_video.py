@@ -57,15 +57,13 @@ class YouTubeVideoManager:
     def __init__(self, service: Any) -> None:
         self._service = service
 
-    async def upload_video(
+    def upload_video(
         self,
         video_path: str | Path,
         title: str,
         description: str,
         tags: list[str],
         publish_at: datetime | None = None,
-        thumbnail_path: str | Path | None = None,
-        playlist_id: str | None = None,
         category_id: str = "28",
         notify_subscribers: bool = True,
     ) -> VideoUploadResult:
@@ -122,7 +120,7 @@ class YouTubeVideoManager:
             url=f"https://youtube.com/watch?v={response['id']}",
         )
 
-    async def set_thumbnail(self, video_id: str, thumbnail_path: str | Path) -> bool:
+    def set_thumbnail(self, video_id: str, thumbnail_path: str | Path) -> bool:
         """Set a custom thumbnail for a video. Returns True on success."""
         thumbnail_path = Path(thumbnail_path)
         if not thumbnail_path.exists():
@@ -140,7 +138,7 @@ class YouTubeVideoManager:
             console.print(f"[yellow]Warning:[/yellow] Could not set thumbnail: {e}")
             return False
 
-    async def update_metadata(
+    def update_metadata(
         self,
         video_id: str,
         title: str | None = None,
@@ -190,7 +188,7 @@ class YouTubeVideoManager:
         )
         return True
 
-    async def get_video_details(self, video_id: str) -> VideoDetails:
+    def get_video_details(self, video_id: str) -> VideoDetails:
         """Fetch full details for a single video by ID."""
         response = (
             self._service.videos()
