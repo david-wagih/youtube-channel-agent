@@ -518,51 +518,6 @@ def transcribe(
 
 
 @app.command()
-def web(
-    port: int = typer.Option(
-        8000,
-        "--port",
-        "-p",
-        help="Port to run the web server on",
-    ),
-    host: str = typer.Option(
-        "127.0.0.1",
-        "--host",
-        help="Host to bind the server to",
-    ),
-    reload: bool = typer.Option(
-        False,
-        "--reload",
-        "-r",
-        help="Auto-reload on code changes (development mode)",
-    ),
-):
-    """Start the web interface.
-
-    Example:
-        yt-agent web
-        yt-agent web --reload     # Auto-reload on changes
-        yt-agent web --port 3000
-    """
-    import uvicorn
-
-    console.print("\n[bold]Starting YouTube Agent web interface...[/bold]")
-    console.print(f"Open [link=http://{host}:{port}]http://{host}:{port}[/link] in your browser")
-    if reload:
-        console.print("[yellow]Development mode: auto-reload enabled[/yellow]")
-    console.print()
-
-    if reload:
-        # Use string reference for reload to work
-        uvicorn.run("yt_agent.web.app:create_app", host=host, port=port, reload=True, factory=True)
-    else:
-        from .web import create_app
-
-        app = create_app()
-        uvicorn.run(app, host=host, port=port)
-
-
-@app.command()
 def playlists():
     """List your YouTube playlists.
 
